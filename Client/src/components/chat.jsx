@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import socketIO from "socket.io-client"
 import ReactScrollToBottom  from "react-scroll-to-bottom";
-import { Send, Users, Wifi, WifiOff, X, MessageCircle } from 'lucide-react';
+import { Send, Users, X, MessageCircle } from 'lucide-react';
 import Message from "./Message.jsx";
 
 let socket;
@@ -13,6 +13,7 @@ const Chat = () => {
     const [messageInput, setMessageInput] = useState("");
     const [isConnected, setIsConnected] = useState(false);
     const [onlineUsers, setOnlineUsers] = useState(0);
+    const [isTyping, setIsTyping] = useState(false);
     const user = sessionStorage.getItem("user") || "Anonymous"; 
 
     const send = () => {
@@ -20,6 +21,7 @@ const Chat = () => {
         if (message && socket) {
             socket.emit('message', { user, message, id });
             setMessageInput("");
+            setIsTyping(false);
         }
     }
 
@@ -86,6 +88,15 @@ const Chat = () => {
         };
     }, []);
 
+    // Handle typing indicator
+    useEffect(() => {
+        if (messageInput.trim()) {
+            setIsTyping(true);
+        } else {
+            setIsTyping(false);
+        }
+    }, [messageInput]);
+
     const handleLeave = () => {
         if (socket) {
             socket.disconnect();
@@ -95,96 +106,107 @@ const Chat = () => {
     };
 
     return (
-        <div className="chatPage bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 h-screen w-screen flex justify-center items-center p-4">
-            <div className="chatContainer max-md:w-full max-md:h-full bg-white h-[85%] w-[90%] max-w-6xl box-border rounded-xl shadow-2xl overflow-hidden flex flex-col">
+        <div className="chatPage relative bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 h-screen w-screen flex justify-center items-center p-4 overflow-hidden">
+            {/* Animated Background */}
+            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-20"></div>
+            
+            <div className="chatContainer relative z-10 max-md:w-full max-md:h-full bg-white/95 backdrop-blur-xl h-[90%] w-[95%] max-w-5xl box-border rounded-3xl shadow-2xl overflow-hidden flex flex-col border border-white/30">
                 {/* Header */}
-                <div className="header bg-gradient-to-r from-blue-600 to-purple-600 h-[12%] min-h-[70px] flex items-center justify-between px-6 shadow-lg">
-                    <div className="flex items-center gap-4">
-                        <div className="bg-white bg-opacity-20 p-2 rounded-lg">
-                            <MessageCircle className="w-6 h-6 text-white" />
+                <div className="header relative bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 h-[10%] min-h-[80px] flex items-center justify-between px-6 md:px-8 shadow-xl">
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500/50 to-purple-500/50 opacity-50"></div>
+                    <div className="relative z-10 flex items-center gap-4 w-full">
+                        <div className="bg-white/20 backdrop-blur-sm p-3 rounded-xl shadow-lg">
+                            <MessageCircle className="w-6 h-6 md:w-7 md:h-7 text-white" />
                         </div>
-                        <div>
-                            <h2 className="text-white text-2xl md:text-3xl font-bold">ChatVerse</h2>
-                            <div className="flex items-center gap-2 text-white text-xs md:text-sm">
-                                {isConnected ? (
-                                    <>
-                                        <Wifi className="w-4 h-4 text-green-300" />
-                                        <span className="text-green-300">Connected</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <WifiOff className="w-4 h-4 text-red-300" />
-                                        <span className="text-red-300">Disconnected</span>
-                                    </>
-                                )}
+                        <div className="flex-1">
+                            <h2 className="text-white text-2xl md:text-3xl font-extrabold drop-shadow-lg">ChatVerse</h2>
+                            <div className="flex items-center gap-3 text-white/90 text-xs md:text-sm mt-1">
+                                <div className={`flex items-center gap-1 ${isConnected ? 'text-green-200' : 'text-red-200'}`}>
+                                    <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-300 animate-pulse' : 'bg-red-300'}`}></div>
+                                    <span className="font-medium">{isConnected ? 'Connected' : 'Disconnected'}</span>
+                                </div>
                                 {onlineUsers > 0 && (
                                     <>
-                                        <span className="mx-2">•</span>
-                                        <Users className="w-4 h-4" />
-                                        <span>{onlineUsers} online</span>
+                                        <span className="text-white/40">•</span>
+                                        <div className="flex items-center gap-1">
+                                            <Users className="w-4 h-4" />
+                                            <span>{onlineUsers} online</span>
+                                        </div>
                                     </>
                                 )}
                             </div>
                         </div>
+                        <button 
+                            onClick={handleLeave}
+                            className="p-2.5 hover:bg-white/20 rounded-xl transition-all duration-300 cursor-pointer group"
+                            title="Leave Chat"
+                        >
+                            <X className="w-5 h-5 md:w-6 md:h-6 text-white group-hover:rotate-90 transition-transform duration-300" />
+                        </button>
                     </div>
-                    <button 
-                        onClick={handleLeave}
-                        className="p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-all duration-300 cursor-pointer"
-                        title="Leave Chat"
-                    >
-                        <X className="w-6 h-6 text-white" />
-                    </button>
                 </div>
 
                 {/* Chat Box */}
-                <ReactScrollToBottom className="chatBox h-[75%] box-border overflow-y-auto flex flex-col bg-gray-50 p-4">
+                <ReactScrollToBottom className="chatBox h-[78%] box-border overflow-y-auto flex flex-col bg-gradient-to-b from-gray-50 to-white p-4 md:p-6">
                     {messages.length === 0 ? (
                         <div className="flex items-center justify-center h-full text-gray-400">
-                            <div className="text-center">
-                                <MessageCircle className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                                <p className="text-lg">No messages yet</p>
-                                <p className="text-sm mt-2">Start the conversation!</p>
+                            <div className="text-center space-y-4">
+                                <div className="relative inline-block">
+                                    <div className="absolute inset-0 bg-purple-200 rounded-full blur-2xl opacity-50 animate-pulse"></div>
+                                    <MessageCircle className="w-20 h-20 md:w-24 md:h-24 mx-auto relative z-10 opacity-40" />
+                                </div>
+                                <div className="space-y-2">
+                                    <p className="text-xl md:text-2xl font-semibold text-gray-500">No messages yet</p>
+                                    <p className="text-sm md:text-base text-gray-400">Start the conversation!</p>
+                                </div>
                             </div>
                         </div>
                     ) : (
                         messages.map((item, i) => (
-                            <Message 
-                                key={i} 
-                                user={item.user} 
-                                message={item.message} 
-                                classs={item.id === id ? 'right' : 'left'}
-                                timestamp={item.timestamp}
-                            />
+                            <div key={i} className="message-enter">
+                                <Message 
+                                    user={item.user} 
+                                    message={item.message} 
+                                    classs={item.id === id ? 'right' : 'left'}
+                                    timestamp={item.timestamp}
+                                />
+                            </div>
                         ))
                     )}
                 </ReactScrollToBottom>
 
                 {/* Input Box */}
-                <div className="inputBox flex border-t-2 border-gray-200 h-[13%] min-h-[70px] box-border bg-white">
-                    <input 
-                        type="text" 
-                        id="chatInput" 
-                        className="w-[85%] bg-white focus:ring-0 focus:outline-none px-6 box-border text-lg border-none" 
-                        placeholder="Type your message here..."
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                send();
-                            }
-                        }}
-                        value={messageInput}
-                        onChange={(e) => setMessageInput(e.target.value)}
-                        disabled={!isConnected}
-                    />
-                    <button 
-                        className="sendBtn w-[15%] text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg" 
-                        onClick={send}
-                        disabled={!messageInput.trim() || !isConnected}
-                        title="Send Message"
-                    >
-                        <Send className="w-5 h-5 md:w-6 md:h-6" />
-                        <span className="hidden md:inline text-sm font-semibold">Send</span>
-                    </button>
+                <div className="inputBox relative flex border-t border-gray-200/50 h-[12%] min-h-[80px] box-border bg-white/80 backdrop-blur-sm">
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-50/50 to-purple-50/50"></div>
+                    <div className="relative z-10 w-full flex items-center px-4 md:px-6 gap-3">
+                        <input 
+                            type="text" 
+                            id="chatInput" 
+                            className="flex-1 bg-white/60 backdrop-blur-sm focus:bg-white text-gray-800 focus:ring-0 focus:outline-none px-5 py-4 text-base md:text-lg rounded-2xl border-2 border-gray-200/50 focus:border-purple-400 transition-all duration-300 placeholder-gray-400 shadow-sm" 
+                            placeholder={isConnected ? "Type your message..." : "Connecting..."}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    send();
+                                }
+                            }}
+                            value={messageInput}
+                            onChange={(e) => setMessageInput(e.target.value)}
+                            disabled={!isConnected}
+                        />
+                        <button 
+                            className={`p-4 md:p-5 rounded-2xl transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 shadow-lg transform ${
+                                messageInput.trim() && isConnected
+                                    ? 'bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 hover:scale-110 hover:shadow-2xl hover:shadow-purple-500/50 text-white'
+                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            }`}
+                            onClick={send}
+                            disabled={!messageInput.trim() || !isConnected}
+                            title="Send Message"
+                        >
+                            <Send className="w-5 h-5 md:w-6 md:h-6" />
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
