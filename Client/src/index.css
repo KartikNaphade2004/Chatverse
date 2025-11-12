@@ -21,25 +21,25 @@ code {
     monospace;
 }
 
-/* Custom Scrollbar - Light Theme */
+/* Custom Scrollbar - Enhanced */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: #f1f5f9;
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: linear-gradient(to bottom, #3b82f6, #8b5cf6);
   border-radius: 10px;
   transition: background 0.3s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: linear-gradient(to bottom, #2563eb, #7c3aed);
 }
 
 /* Dark scrollbar for sidebar */
@@ -48,11 +48,11 @@ code {
 }
 
 .dark-scrollbar::-webkit-scrollbar-thumb {
-  background: #4b5563;
+  background: linear-gradient(to bottom, #4b5563, #6b7280);
 }
 
 .dark-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #6b7280;
+  background: linear-gradient(to bottom, #6b7280, #9ca3af);
 }
 
 /* Smooth Animations */
@@ -78,12 +78,23 @@ code {
   }
 }
 
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .animate-fade-in {
-  animation: fadeIn 0.3s ease-out;
+  animation: fadeIn 0.4s ease-out;
 }
 
 .message-enter {
-  animation: slideIn 0.2s ease-out;
+  animation: slideIn 0.3s ease-out;
 }
 
 /* Smooth Transitions */
@@ -105,4 +116,11 @@ select:focus {
 ::selection {
   background-color: rgba(59, 130, 246, 0.3);
   color: inherit;
+}
+
+/* Backdrop blur support */
+@supports (backdrop-filter: blur(10px)) {
+  .backdrop-blur-xl {
+    backdrop-filter: blur(16px);
+  }
 }
