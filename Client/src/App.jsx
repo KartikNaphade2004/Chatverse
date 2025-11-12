@@ -5,6 +5,7 @@ import Join from './components/Join/Join.jsx'
 import Chat from './components/chat.jsx'
 import Requests from './components/Requests.jsx'
 import RoomList from './components/RoomList.jsx'
+import CreateRoom from './components/CreateRoom.jsx'
 
 const App = () => {
   return (
@@ -13,6 +14,7 @@ const App = () => {
         <Routes>
           <Route path="/" element={<Join/>}/>
           <Route path="/rooms" element={<RoomList/>}/>
+          <Route path="/create-room" element={<CreateRoom/>}/>
           <Route path="/requests" element={<Requests/>}/>
           <Route path="/chat" element={<Chat/>}/>
         </Routes>

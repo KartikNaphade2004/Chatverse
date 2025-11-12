@@ -2,43 +2,18 @@ import React , {useState} from 'react'
 import './Join.css'
 import logo from '../../images/logo.png'
 import {useNavigate} from 'react-router-dom'
-import { ArrowRight, Sparkles, Users, Plus } from 'lucide-react'
-import socketIO from 'socket.io-client'
-
-const ENDPOINT = import.meta.env.VITE_SERVER_URL || "https://chatverse-backend-1041.onrender.com";
+import { ArrowRight, Sparkles } from 'lucide-react'
 
 const Join = () => {
-   const [roomName, setRoomName] = useState("");
    const [username, setUsername] = useState("");
-   const [focused, setFocused] = useState('room');
+   const [focused, setFocused] = useState(false);
    const navigate = useNavigate();
 
-   const handleCreateRoom = () => {
-    if (roomName.trim() && username.trim()) {
-      // Store user info
+   const handleContinue = () => {
+    if (username.trim()) {
       sessionStorage.setItem("user", username.trim());
-      sessionStorage.setItem("room", roomName.trim());
-      sessionStorage.setItem("isRoomOwner", "true");
-      
-      // Connect to server and create room
-      const socket = socketIO(ENDPOINT, { transports: ['websocket'] });
-      
-      socket.on('connect', () => {
-        socket.emit('createRoom', { 
-          room: roomName.trim(), 
-          user: username.trim() 
-        });
-      });
-      
-      socket.on('roomCreated', () => {
-        socket.disconnect();
-        navigate('/rooms');
-      });
-      
-      socket.on('roomExists', () => {
-        alert('Room already exists! Please choose a different name.');
-        socket.disconnect();
-      });
+      // Redirect to rooms list
+      navigate('/rooms');
     }
    }
 
@@ -85,78 +60,46 @@ const Join = () => {
               ChatVerse
             </h1>
             <div className="flex items-center justify-center gap-2 text-purple-200 text-sm">
-              <Plus className="w-4 h-4" />
-              <span>Create Your Chat Room</span>
+              <Sparkles className="w-4 h-4" />
+              <span>Real-Time Chat Experience</span>
             </div>
           </div>
 
           {/* Join Form */}
-          <div className='space-y-4'>
-            {/* Room Name Input */}
+          <div className='space-y-6'>
             <div className='relative'>
               <label className="block text-white/80 text-sm font-medium mb-2 ml-1">
-                <Users className="w-4 h-4 inline mr-1" />
-                Room Name
+                Enter Your Name
               </label>
               <input
                 type="text"
                 className={`w-full p-4 text-lg bg-white/10 backdrop-blur-sm text-white placeholder-white/60 rounded-xl outline-none border-2 transition-all duration-300 ${
-                  focused === 'room'
+                  focused
                     ? 'border-purple-400 shadow-lg shadow-purple-500/50 scale-[1.02]' 
                     : 'border-white/30 hover:border-white/50'
                 }`}
-                placeholder="e.g., MyChatRoom"
-                value={roomName}
-                onChange={(e) => setRoomName(e.target.value)}
-                onFocus={() => setFocused('room')}
-                onBlur={() => setFocused('')}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && roomName.trim() && !username.trim()) {
-                    document.getElementById('username').focus();
-                  } else if (e.key === 'Enter' && roomName.trim() && username.trim()) {
-                    handleCreateRoom();
-                  }
-                }}
-                id="roomName"
-              />
-              <div className={`absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-xl -z-10 blur-xl transition-opacity duration-300 ${focused === 'room' ? 'opacity-100' : 'opacity-0'}`}></div>
-            </div>
-
-            {/* Username Input */}
-            <div className='relative'>
-              <label className="block text-white/80 text-sm font-medium mb-2 ml-1">
-                Your Name
-              </label>
-              <input
-                type="text"
-                className={`w-full p-4 text-lg bg-white/10 backdrop-blur-sm text-white placeholder-white/60 rounded-xl outline-none border-2 transition-all duration-300 ${
-                  focused === 'username'
-                    ? 'border-purple-400 shadow-lg shadow-purple-500/50 scale-[1.02]' 
-                    : 'border-white/30 hover:border-white/50'
-                }`}
-                placeholder="Enter your name"
+                placeholder="Your name"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                onFocus={() => setFocused('username')}
-                onBlur={() => setFocused('')}
+                onFocus={() => setFocused(true)}
+                onBlur={() => setFocused(false)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && roomName.trim() && username.trim()) {
-                    handleCreateRoom();
+                  if (e.key === 'Enter' && username.trim()) {
+                    handleContinue();
                   }
                 }}
                 id="username"
               />
-              <div className={`absolute inset-0 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-xl -z-10 blur-xl transition-opacity duration-300 ${focused === 'username' ? 'opacity-100' : 'opacity-0'}`}></div>
+              <div className={`absolute inset-0 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-xl -z-10 blur-xl transition-opacity duration-300 ${focused ? 'opacity-100' : 'opacity-0'}`}></div>
             </div>
 
             <button 
-              className="group w-full p-4 text-lg bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none relative overflow-hidden mt-6"
-              onClick={handleCreateRoom}
-              disabled={!roomName.trim() || !username.trim()}
+              className="group w-full p-4 text-lg bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none relative overflow-hidden"
+              onClick={handleContinue}
+              disabled={!username.trim()}
             >
               <span className="relative z-10 flex items-center justify-center gap-2">
-                <Plus className="w-5 h-5" />
-                Create Room
+                Continue
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </span>
               <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
