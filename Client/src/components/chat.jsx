@@ -7,7 +7,7 @@ import Message from "./Message.jsx";
 import close  from "../images/close.png"
 
 let socket;
-const ENDPOINT = "https://chatverse-backend-1041.onrender.com";
+const ENDPOINT = import.meta.env.VITE_SERVER_URL || "https://chatverse-backend-1041.onrender.com";
 const Chat = () => {
     const [id , setid] = useState("");
     const [messages,setMessages] = useState([]);
