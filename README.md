@@ -1,4 +1,4 @@
-# 💬 ChatVerse - Real-Time Multi-User Chat Application
+# 💬 ChatVerse - Real-Time Room-Based Chat Application
 
 <div align="center">
 
@@ -7,36 +7,23 @@
 ![Node.js](https://img.shields.io/badge/Node.js-Express-green?style=for-the-badge&logo=node.js)
 ![Socket.IO](https://img.shields.io/badge/Socket.IO-4.8-white?style=for-the-badge&logo=socket.io)
 
-**A modern, real-time chat application built with React, Node.js, and Socket.IO**
+**A modern, real-time room-based chat application with request-based access control**
 
-[Live Demo](https://chatverse-client.vercel.app) • [Documentation](#documentation) • [Features](#features) • [Tech Stack](#tech-stack)
+[Live Demo](https://chatverse-client.vercel.app) • [Features](#features) • [Tech Stack](#tech-stack)
 
 </div>
 
 ---
 
-## 📋 Table of Contents
-
-- [Overview](#overview)
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
-- [Getting Started](#getting-started)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Deployment](#deployment)
-- [API Documentation](#api-documentation)
-- [Contributing](#contributing)
-- [License](#license)
-
 ## 🎯 Overview
 
-ChatVerse is a full-stack real-time chat application that enables multiple users to communicate instantly through WebSocket connections. The application features a modern, responsive UI built with React and Tailwind CSS, and a robust backend powered by Node.js and Socket.IO.
+ChatVerse is a full-stack real-time chat application that enables users to create rooms and chat with others through a request-based system. Users can create rooms, view active rooms, request to join rooms, and chat after approval. The application features a modern, responsive UI built with React and Tailwind CSS, and a robust backend powered by Node.js and Socket.IO.
 
 ### Key Highlights
 
 - ⚡ **Real-Time Communication**: Instant message delivery using WebSocket connections
-- 🎨 **Modern UI/UX**: Beautiful, responsive design with Tailwind CSS
+- 🏠 **Room-Based System**: Create and join chat rooms with request-based access
+- 🎨 **Modern UI/UX**: Beautiful, responsive design with glassmorphism effects
 - 📱 **Mobile Responsive**: Works seamlessly on desktop and mobile devices
 - 🚀 **Fast Performance**: Optimized for speed with React 19 and Vite
 - 🔒 **Secure**: CORS-enabled backend with secure socket connections
@@ -45,17 +32,20 @@ ChatVerse is a full-stack real-time chat application that enables multiple users
 ## ✨ Features
 
 ### Core Features
-- ✅ **Real-Time Messaging**: Instant message delivery and updates
-- ✅ **Multi-User Support**: Multiple users can chat simultaneously
+- ✅ **Room Creation**: Users can create their own chat rooms
+- ✅ **Active Room List**: View all active rooms with user counts
+- ✅ **Join Requests**: Request-based system to join rooms
+- ✅ **Request Management**: Room owners can accept/reject join requests
+- ✅ **Real-Time Messaging**: Instant message delivery within rooms
 - ✅ **User Join/Leave Notifications**: Real-time notifications when users join or leave
-- ✅ **Welcome Messages**: Personalized welcome messages for new users
 - ✅ **Message History**: View all messages in the chat room
 - ✅ **Auto-Scroll**: Automatic scrolling to latest messages
 - ✅ **Responsive Design**: Works on all screen sizes
-- ✅ **Modern UI**: Clean and intuitive user interface
+- ✅ **Modern UI**: Clean and intuitive user interface with glassmorphism
 
 ### Technical Features
 - ✅ **WebSocket Integration**: Real-time bidirectional communication
+- ✅ **Socket.IO Rooms**: Efficient room-based message broadcasting
 - ✅ **React Router**: Client-side routing
 - ✅ **State Management**: Efficient message state management
 - ✅ **Environment Variables**: Configurable backend URLs
@@ -92,7 +82,9 @@ ChatVerse-main/
 ├── Client/                 # Frontend React Application
 │   ├── src/
 │   │   ├── components/     # React components
-│   │   │   ├── Join/       # Join page component
+│   │   │   ├── Join/       # Room creation page
+│   │   │   ├── RoomList.jsx # Active rooms list
+│   │   │   ├── Requests.jsx # Join request management
 │   │   │   ├── chat.jsx    # Chat room component
 │   │   │   └── Message.jsx # Message component
 │   │   ├── images/         # Image assets
@@ -106,9 +98,7 @@ ChatVerse-main/
 │   ├── app.js              # Main server file
 │   └── package.json        # Backend dependencies
 │
-├── README.md               # Project documentation
-├── DEPLOYMENT.md           # Deployment guide
-└── VERCEL_DEPLOYMENT.md    # Vercel deployment guide
+└── README.md               # Project documentation
 ```
 
 ## 🚀 Getting Started
@@ -171,49 +161,40 @@ ChatVerse-main/
    ```
    The frontend will start on `http://localhost:5173`
 
-3. **Open the Application**
+3. **Use the Application**
    - Open your browser and navigate to `http://localhost:5173`
-   - Enter your name and click "Join"
-   - Start chatting!
+   - Create a room with a room name and your name
+   - View active rooms and request to join
+   - Room owners can accept/reject requests
+   - Start chatting after approval!
 
-### Building for Production
+### Application Flow
 
-1. **Build the Frontend**
-   ```bash
-   cd Client
-   npm run build
-   ```
-
-2. **Preview Production Build**
-   ```bash
-   npm run preview
-   ```
+1. **Create Room**: Enter room name and your name to create a room
+2. **View Rooms**: See all active rooms with user counts
+3. **Request to Join**: Click "Request to Join" on any room
+4. **Manage Requests**: Room owners see and manage join requests
+5. **Chat**: After approval, users can chat in the room
 
 ## 🌐 Deployment
 
 ### Frontend Deployment (Vercel)
 
-1. **Deploy to Vercel**
-   - Connect your GitHub repository to Vercel
-   - Set root directory to `Client`
-   - Add environment variable: `VITE_SERVER_URL=https://your-backend-url.com`
-   - Deploy!
-
-   See [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md) for detailed instructions.
+1. Connect your GitHub repository to Vercel
+2. Set root directory to `Client`
+3. Add environment variable: `VITE_SERVER_URL=https://your-backend-url.com`
+4. Deploy!
 
 ### Backend Deployment (Render)
 
-1. **Deploy to Render**
-   - Create a new Web Service on Render
-   - Connect your GitHub repository
-   - Set root directory to `Server`
-   - Add environment variables:
-     - `PORT=3000`
-     - `ALLOWED_ORIGINS=https://your-frontend-url.vercel.app`
-     - `NODE_ENV=production`
-   - Deploy!
-
-   See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed instructions.
+1. Create a new Web Service on Render
+2. Connect your GitHub repository
+3. Set root directory to `Server`
+4. Add environment variables:
+   - `PORT=3000`
+   - `ALLOWED_ORIGINS=https://your-frontend-url.vercel.app`
+   - `NODE_ENV=production`
+5. Deploy!
 
 ## 📚 API Documentation
 
@@ -221,62 +202,60 @@ ChatVerse-main/
 
 #### Client to Server
 
-- **`joined`**: User joins the chat
+- **`createRoom`**: Create a new chat room
   ```javascript
-  socket.emit('joined', { user: 'username' });
+  socket.emit('createRoom', { room: 'RoomName', user: 'Username' });
+  ```
+
+- **`getActiveRooms`**: Get list of active rooms
+  ```javascript
+  socket.emit('getActiveRooms');
+  ```
+
+- **`requestJoinRoom`**: Request to join a room
+  ```javascript
+  socket.emit('requestJoinRoom', { room: 'RoomName', user: 'Username' });
+  ```
+
+- **`acceptJoinRequest`**: Accept a join request (room owner only)
+  ```javascript
+  socket.emit('acceptJoinRequest', { room: 'RoomName', requestingUser: 'Username', requestingSocketId: 'socketId' });
+  ```
+
+- **`rejectJoinRequest`**: Reject a join request (room owner only)
+  ```javascript
+  socket.emit('rejectJoinRequest', { room: 'RoomName', requestingUser: 'Username' });
+  ```
+
+- **`joinRoom`**: Join a room after request accepted
+  ```javascript
+  socket.emit('joinRoom', { user: 'Username', room: 'RoomName' });
   ```
 
 - **`message`**: Send a message
   ```javascript
-  socket.emit('message', { user: 'username', message: 'Hello!', id: socket.id });
-  ```
-
-- **`leave`**: User leaves the chat
-  ```javascript
-  socket.emit('leave', { user: 'username' });
+  socket.emit('message', { user: 'Username', message: 'Hello!', id: socket.id });
   ```
 
 #### Server to Client
 
-- **`welcome`**: Welcome message for new user
-  ```javascript
-  socket.on('welcome', (data) => {
-    console.log(data.user, data.message);
-  });
-  ```
-
-- **`userJoined`**: Notification when a user joins
-  ```javascript
-  socket.on('userJoined', (data) => {
-    console.log(data.user, data.message);
-  });
-  ```
-
+- **`activeRooms`**: List of active rooms
+- **`roomCreated`**: Room created successfully
+- **`roomExists`**: Room already exists
+- **`joinRequestSent`**: Join request sent
+- **`joinRequestAccepted`**: Join request accepted
+- **`joinRequestRejected`**: Join request rejected
+- **`newJoinRequest`**: New join request (room owner)
+- **`joinRequests`**: List of join requests (room owner)
 - **`sendMessage`**: Receive a message
-  ```javascript
-  socket.on('sendMessage', (data) => {
-    console.log(data.user, data.message);
-  });
-  ```
-
-- **`leave`**: Notification when a user leaves
-  ```javascript
-  socket.on('leave', (data) => {
-    console.log(data.user, data.message);
-  });
-  ```
-
-### REST API Endpoints
-
-- **GET `/`**: Health check endpoint
-  ```bash
-  curl http://localhost:3000/
-  ```
-  Response: `server working`
+- **`userJoinedRoom`**: User joined the room
+- **`userLeftRoom`**: User left the room
+- **`roomDeleted`**: Room was deleted
 
 ## 🎨 UI/UX Features
 
 - **Modern Design**: Clean and intuitive interface
+- **Glassmorphism**: Beautiful glassmorphism effects
 - **Responsive Layout**: Works on all devices
 - **Smooth Animations**: Enhanced user experience
 - **Auto-Scroll**: Automatically scrolls to latest messages
@@ -326,12 +305,6 @@ This project is open source and available under the [MIT License](https://openso
 - [Vercel](https://vercel.com/) - Frontend hosting
 - [Render](https://render.com/) - Backend hosting
 
-## 📊 Project Status
-
-✅ **Status**: Active Development
-✅ **Version**: 1.0.0
-✅ **Last Updated**: December 2024
-
 ---
 
 <div align="center">
@@ -341,4 +314,3 @@ This project is open source and available under the [MIT License](https://openso
 [⭐ Star this repo](https://github.com/KartikNaphade2004/Chatverse) • [🐛 Report Bug](https://github.com/KartikNaphade2004/Chatverse/issues) • [💡 Request Feature](https://github.com/KartikNaphade2004/Chatverse/issues)
 
 </div>
-

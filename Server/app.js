@@ -13,7 +13,7 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: process.env.NODE_ENV === 'production' ? allowedOrigins : true, // Allow all in development
+        origin: process.env.NODE_ENV === 'production' ? allowedOrigins : true,
         credentials: true,
         methods: ['GET', 'POST']
     }
@@ -21,7 +21,6 @@ const io = new Server(server, {
 
 app.use(cors({
     origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests) only in development
         if (!origin) {
             if (process.env.NODE_ENV !== 'production') {
                 return callback(null, true);
@@ -29,11 +28,9 @@ app.use(cors({
             return callback(new Error('Not allowed by CORS - no origin'));
         }
         
-        // Check if origin is in allowed list
         if (allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
         } else if (process.env.NODE_ENV !== 'production') {
-            // In development, allow all origins for easier testing
             callback(null, true);
         } else {
             callback(new Error('Not allowed by CORS'));
@@ -43,37 +40,215 @@ app.use(cors({
 }));
 
 const port = process.env.PORT || 3000; 
-// Store users by room: { roomName: { socketId: { user, room } } }
+
+// Store rooms: { roomName: { owner: string, users: { socketId: user }, joinRequests: [{user, socketId}] } }
 const rooms = {};
 // Store socket to room mapping: { socketId: roomName }
 const socketToRoom = {};
 
+// Get active rooms list
+const getActiveRooms = () => {
+    return Object.keys(rooms).map(roomName => ({
+        name: roomName,
+        owner: rooms[roomName].owner,
+        userCount: Object.keys(rooms[roomName].users || {}).length
+    }));
+};
+
 io.on("connection",(socket)=>{
     console.log(`New connection: ${socket.id}`);
 
-    // Join a room
+    // Create a room
+    socket.on('createRoom', ({user, room})=>{
+        if (!room || !user) {
+            socket.emit('error', { message: 'Room and user are required' });
+            return;
+        }
+
+        if (rooms[room]) {
+            socket.emit('roomExists', { message: 'Room already exists' });
+            return;
+        }
+
+        // Create new room
+        rooms[room] = {
+            owner: user,
+            users: {},
+            joinRequests: []
+        };
+
+        // Add creator as first user
+        rooms[room].users[socket.id] = user;
+        socketToRoom[socket.id] = room;
+        socket.join(room);
+
+        console.log(`Room created: ${room} by ${user}`);
+        
+        socket.emit('roomCreated', { room, user });
+        
+        // Broadcast new room to all clients
+        io.emit('activeRooms', getActiveRooms());
+    });
+
+    // Get active rooms
+    socket.on('getActiveRooms', ()=>{
+        socket.emit('activeRooms', getActiveRooms());
+    });
+
+    // Request to join a room
+    socket.on('requestJoinRoom', ({user, room})=>{
+        if (!room || !user) {
+            socket.emit('error', { message: 'Room and user are required' });
+            return;
+        }
+
+        if (!rooms[room]) {
+            socket.emit('error', { message: 'Room does not exist' });
+            return;
+        }
+
+        // Check if user is already in room
+        const isInRoom = Object.values(rooms[room].users).includes(user);
+        if (isInRoom) {
+            socket.emit('error', { message: 'You are already in this room' });
+            return;
+        }
+
+        // Add join request
+        rooms[room].joinRequests.push({
+            user: user,
+            socketId: socket.id,
+            timestamp: new Date().toISOString()
+        });
+
+        console.log(`${user} requested to join ${room}`);
+
+        // Notify room owner
+        const ownerSocketId = Object.keys(rooms[room].users).find(
+            sid => rooms[room].users[sid] === rooms[room].owner
+        );
+        
+        if (ownerSocketId) {
+            io.to(ownerSocketId).emit('newJoinRequest', {
+                room: room,
+                user: user,
+                socketId: socket.id
+            });
+        }
+
+        socket.emit('joinRequestSent', { room, user });
+    });
+
+    // Accept join request
+    socket.on('acceptJoinRequest', ({room, requestingUser, requestingSocketId})=>{
+        if (!rooms[room]) {
+            socket.emit('error', { message: 'Room does not exist' });
+            return;
+        }
+
+        // Check if current user is room owner
+        const isOwner = rooms[room].users[socket.id] === rooms[room].owner;
+        if (!isOwner) {
+            socket.emit('error', { message: 'Only room owner can accept requests' });
+            return;
+        }
+
+        // Remove from join requests
+        rooms[room].joinRequests = rooms[room].joinRequests.filter(
+            req => req.user !== requestingUser
+        );
+
+        // Add user to room
+        rooms[room].users[requestingSocketId] = requestingUser;
+        socketToRoom[requestingSocketId] = room;
+        
+        // Make requesting user join the room
+        io.to(requestingSocketId).emit('joinRequestAccepted', { room });
+        
+        // Notify all users in room
+        io.to(room).emit('userJoinedRoom', {
+            user: requestingUser,
+            room: room,
+            timestamp: new Date().toISOString()
+        });
+
+        // Send updated room users list
+        const roomUsers = Object.values(rooms[room].users);
+        io.to(room).emit('roomUsersUpdate', roomUsers);
+
+        console.log(`${requestingUser} joined ${room}`);
+    });
+
+    // Reject join request
+    socket.on('rejectJoinRequest', ({room, requestingUser})=>{
+        if (!rooms[room]) {
+            socket.emit('error', { message: 'Room does not exist' });
+            return;
+        }
+
+        // Check if current user is room owner
+        const isOwner = rooms[room].users[socket.id] === rooms[room].owner;
+        if (!isOwner) {
+            socket.emit('error', { message: 'Only room owner can reject requests' });
+            return;
+        }
+
+        // Remove from join requests
+        rooms[room].joinRequests = rooms[room].joinRequests.filter(
+            req => req.user !== requestingUser
+        );
+
+        // Find requesting user's socket
+        const request = rooms[room].joinRequests.find(req => req.user === requestingUser);
+        if (request) {
+            io.to(request.socketId).emit('joinRequestRejected', { room });
+        }
+
+        console.log(`Join request from ${requestingUser} rejected for ${room}`);
+    });
+
+    // Get join requests for a room (room owner only)
+    socket.on('getJoinRequests', ({room})=>{
+        if (!rooms[room]) {
+            socket.emit('error', { message: 'Room does not exist' });
+            return;
+        }
+
+        // Check if current user is room owner
+        const isOwner = rooms[room].users[socket.id] === rooms[room].owner;
+        if (!isOwner) {
+            socket.emit('error', { message: 'Only room owner can view requests' });
+            return;
+        }
+
+        socket.emit('joinRequests', rooms[room].joinRequests);
+    });
+
+    // Join room (after request accepted)
     socket.on('joinRoom', ({user, room})=>{
         if (!room || !user) {
             socket.emit('error', { message: 'Room and user are required' });
             return;
         }
 
-        // Store user in room
         if (!rooms[room]) {
-            rooms[room] = {};
+            socket.emit('error', { message: 'Room does not exist' });
+            return;
         }
-        rooms[room][socket.id] = { user, room };
-        socketToRoom[socket.id] = room;
-        socket.join(room);
 
+        // Check if user is allowed in room
+        if (!rooms[room].users[socket.id]) {
+            socket.emit('error', { message: 'You are not authorized to join this room' });
+            return;
+        }
+
+        socket.join(room);
         console.log(`${user} joined room: ${room}`);
-        
-        // Send room users list to the new user (excluding current user)
-        const roomUsers = Object.values(rooms[room])
-            .map(u => u.user)
-            .filter(u => u !== user);
+
+        // Send room users list
+        const roomUsers = Object.values(rooms[room].users).filter(u => u !== user);
         socket.emit('roomUsers', roomUsers);
-        
+
         // Notify others in the room
         socket.to(room).emit('userJoinedRoom', {
             user: user,
@@ -81,37 +256,30 @@ io.on("connection",(socket)=>{
             timestamp: new Date().toISOString()
         });
 
-        // Send updated room users list to all in room
-        const updatedRoomUsers = Object.values(rooms[room]).map(u => u.user);
+        // Send updated room users list
+        const updatedRoomUsers = Object.values(rooms[room].users);
         io.to(room).emit('roomUsersUpdate', updatedRoomUsers);
     });
 
-    // Get room users (for requests page)
+    // Get room users
     socket.on('getRoomUsers', ({room})=>{
-        if (!room) {
-            socket.emit('error', { message: 'Room is required' });
+        if (!room || !rooms[room]) {
+            socket.emit('roomUsers', []);
             return;
         }
 
-        if (rooms[room]) {
-            // Get all users in the room
-            const roomUsers = Object.values(rooms[room]).map(u => u.user);
-            
-            // Filter out current user
-            const currentUser = rooms[room][socket.id]?.user;
-            const otherUsers = roomUsers.filter(u => u !== currentUser);
-            
-            socket.emit('roomUsers', otherUsers);
-        } else {
-            socket.emit('roomUsers', []);
-        }
+        const roomUsers = Object.values(rooms[room].users);
+        const currentUser = rooms[room].users[socket.id];
+        const otherUsers = roomUsers.filter(u => u !== currentUser);
+        
+        socket.emit('roomUsers', otherUsers);
     });
 
     // Send message in room
     socket.on('message', ({message, id})=>{
         const room = socketToRoom[id];
-        if (room && rooms[room] && rooms[room][id] && message){
-            const user = rooms[room][id].user;
+        if (room && rooms[room] && rooms[room].users[id] && message){
+            const user = rooms[room].users[id];
             io.to(room).emit('sendMessage', {
                 user: user,
                 message: message,
@@ -124,25 +292,38 @@ io.on("connection",(socket)=>{
     // Disconnect
     socket.on('disconnect', ()=>{
         const room = socketToRoom[socket.id];
-        if (room && rooms[room] && rooms[room][socket.id]){
-            const leavingUser = rooms[room][socket.id].user;
-            delete rooms[room][socket.id];
+        if (room && rooms[room] && rooms[room].users[socket.id]){
+            const leavingUser = rooms[room].users[socket.id];
+            const isOwner = leavingUser === rooms[room].owner;
+            
+            delete rooms[room].users[socket.id];
             delete socketToRoom[socket.id];
             
-            // If room is empty, delete it
-            if (Object.keys(rooms[room]).length === 0) {
+            // If owner leaves, delete room
+            if (isOwner) {
+                // Notify all users in room
+                io.to(room).emit('roomDeleted', { room });
                 delete rooms[room];
+                // Broadcast updated room list
+                io.emit('activeRooms', getActiveRooms());
+                console.log(`Room ${room} deleted by owner`);
             } else {
-                // Notify others in the room
-                socket.to(room).emit('userLeftRoom', {
-                    user: leavingUser,
-                    room: room,
-                    timestamp: new Date().toISOString()
-                });
+                // If room is empty, delete it
+                if (Object.keys(rooms[room].users).length === 0) {
+                    delete rooms[room];
+                    io.emit('activeRooms', getActiveRooms());
+                } else {
+                    // Notify others in the room
+                    socket.to(room).emit('userLeftRoom', {
+                        user: leavingUser,
+                        room: room,
+                        timestamp: new Date().toISOString()
+                    });
 
-                // Send updated room users list
-                const updatedRoomUsers = Object.values(rooms[room]).map(u => u.user);
-                io.to(room).emit('roomUsersUpdate', updatedRoomUsers);
+                    // Send updated room users list
+                    const updatedRoomUsers = Object.values(rooms[room].users);
+                    io.to(room).emit('roomUsersUpdate', updatedRoomUsers);
+                }
             }
             
             console.log(`${leavingUser} left room: ${room}`);

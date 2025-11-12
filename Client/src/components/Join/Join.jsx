@@ -2,7 +2,10 @@ import React , {useState} from 'react'
 import './Join.css'
 import logo from '../../images/logo.png'
 import {useNavigate} from 'react-router-dom'
-import { ArrowRight, Sparkles, Users } from 'lucide-react'
+import { ArrowRight, Sparkles, Users, Plus } from 'lucide-react'
+import socketIO from 'socket.io-client'
+
+const ENDPOINT = import.meta.env.VITE_SERVER_URL || "https://chatverse-backend-1041.onrender.com";
 
 const Join = () => {
    const [roomName, setRoomName] = useState("");
@@ -10,12 +13,32 @@ const Join = () => {
    const [focused, setFocused] = useState('room');
    const navigate = useNavigate();
 
-   const handleJoin = () => {
+   const handleCreateRoom = () => {
     if (roomName.trim() && username.trim()) {
-      sessionStorage.setItem("room", roomName.trim());
+      // Store user info
       sessionStorage.setItem("user", username.trim());
-      // Redirect to requests page
-      navigate('/requests');
+      sessionStorage.setItem("room", roomName.trim());
+      sessionStorage.setItem("isRoomOwner", "true");
+      
+      // Connect to server and create room
+      const socket = socketIO(ENDPOINT, { transports: ['websocket'] });
+      
+      socket.on('connect', () => {
+        socket.emit('createRoom', { 
+          room: roomName.trim(), 
+          user: username.trim() 
+        });
+      });
+      
+      socket.on('roomCreated', () => {
+        socket.disconnect();
+        navigate('/rooms');
+      });
+      
+      socket.on('roomExists', () => {
+        alert('Room already exists! Please choose a different name.');
+        socket.disconnect();
+      });
     }
    }
 
@@ -62,8 +85,8 @@ const Join = () => {
               ChatVerse
             </h1>
             <div className="flex items-center justify-center gap-2 text-purple-200 text-sm">
-              <Sparkles className="w-4 h-4" />
-              <span>Real-Time Chat Experience</span>
+              <Plus className="w-4 h-4" />
+              <span>Create Your Chat Room</span>
             </div>
           </div>
 
@@ -73,7 +96,7 @@ const Join = () => {
             <div className='relative'>
               <label className="block text-white/80 text-sm font-medium mb-2 ml-1">
                 <Users className="w-4 h-4 inline mr-1" />
-                Enter Room Name
+                Room Name
               </label>
               <input
                 type="text"
@@ -82,7 +105,7 @@ const Join = () => {
                     ? 'border-purple-400 shadow-lg shadow-purple-500/50 scale-[1.02]' 
                     : 'border-white/30 hover:border-white/50'
                 }`}
-                placeholder="e.g., Room123"
+                placeholder="e.g., MyChatRoom"
                 value={roomName}
                 onChange={(e) => setRoomName(e.target.value)}
                 onFocus={() => setFocused('room')}
@@ -91,7 +114,7 @@ const Join = () => {
                   if (e.key === 'Enter' && roomName.trim() && !username.trim()) {
                     document.getElementById('username').focus();
                   } else if (e.key === 'Enter' && roomName.trim() && username.trim()) {
-                    handleJoin();
+                    handleCreateRoom();
                   }
                 }}
                 id="roomName"
@@ -102,7 +125,7 @@ const Join = () => {
             {/* Username Input */}
             <div className='relative'>
               <label className="block text-white/80 text-sm font-medium mb-2 ml-1">
-                Enter Your Name
+                Your Name
               </label>
               <input
                 type="text"
@@ -111,14 +134,14 @@ const Join = () => {
                     ? 'border-purple-400 shadow-lg shadow-purple-500/50 scale-[1.02]' 
                     : 'border-white/30 hover:border-white/50'
                 }`}
-                placeholder="Your name"
+                placeholder="Enter your name"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 onFocus={() => setFocused('username')}
                 onBlur={() => setFocused('')}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && roomName.trim() && username.trim()) {
-                    handleJoin();
+                    handleCreateRoom();
                   }
                 }}
                 id="username"
@@ -128,11 +151,12 @@ const Join = () => {
 
             <button 
               className="group w-full p-4 text-lg bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none relative overflow-hidden mt-6"
-              onClick={handleJoin}
+              onClick={handleCreateRoom}
               disabled={!roomName.trim() || !username.trim()}
             >
               <span className="relative z-10 flex items-center justify-center gap-2">
-                Join Room
+                <Plus className="w-5 h-5" />
+                Create Room
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </span>
               <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>

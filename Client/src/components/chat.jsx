@@ -14,43 +14,16 @@ const Chat = () => {
     const [messageInput, setMessageInput] = useState("");
     const [isConnected, setIsConnected] = useState(false);
     const [onlineUsers, setOnlineUsers] = useState(0);
-    const [hasAccess, setHasAccess] = useState(false);
     const navigate = useNavigate();
     const user = sessionStorage.getItem("user") || "Anonymous";
     const room = sessionStorage.getItem("room") || "";
+    const isRoomOwner = sessionStorage.getItem("isRoomOwner") === "true";
 
-    // Check if user has accepted request
     useEffect(() => {
         if (!room || !user) {
             navigate('/');
             return;
         }
-
-        const acceptedRequests = JSON.parse(localStorage.getItem('acceptedRequests') || '[]');
-        const hasAccepted = acceptedRequests.some(r => 
-            (r.from === user || r.to === user) && r.room === room
-        );
-        
-        if (!hasAccepted) {
-            // Redirect to requests page if no accepted request
-            setTimeout(() => {
-                navigate('/requests');
-            }, 1000);
-        } else {
-            setHasAccess(true);
-        }
-    }, [user, room, navigate]);
-
-    const send = () => {
-        const message = messageInput.trim();
-        if (message && socket && hasAccess) {
-            socket.emit('message', { user, message, id });
-            setMessageInput("");
-        }
-    }
-
-    useEffect(() => {
-        if (!hasAccess || !room || !user) return;
 
         socket = socketIO(ENDPOINT, { 
             transports: ['websocket'],
@@ -77,6 +50,17 @@ const Chat = () => {
             setIsConnected(false);
         });
 
+        socket.on('error', (error) => {
+            console.error('Socket error:', error);
+            if (error.message && error.message.includes('authorized')) {
+                navigate('/requests');
+            }
+        });
+
+        socket.on('roomUsers', (users) => {
+            // This is for initial load
+        });
+
         socket.on('roomUsersUpdate', (users) => {
             setOnlineUsers(users.length);
         });
@@ -87,7 +71,6 @@ const Chat = () => {
                 message: `${data.user} joined the room`,
                 timestamp: new Date().toISOString()
             }]);
-            socket.emit('getRoomUsers', { room });
         });
 
         socket.on('userLeftRoom', (data) => {
@@ -98,16 +81,23 @@ const Chat = () => {
             }]);
         });
 
+        socket.on('roomDeleted', (data) => {
+            alert('Room has been deleted by the owner.');
+            sessionStorage.removeItem("room");
+            sessionStorage.removeItem("isRoomOwner");
+            navigate('/rooms');
+        });
+
         return () => {
             if (socket) {
                 socket.off();
                 socket.disconnect();
             }
         };
-    }, [hasAccess, room, user]);
+    }, [room, user, navigate]);
 
     useEffect(() => {
-        if (!socket || !hasAccess) return;
+        if (!socket) return;
 
         socket.on('sendMessage', (data) => {
             setMessages((prevMessages) => [...prevMessages, { ...data, timestamp: new Date().toISOString() }]);
@@ -116,7 +106,15 @@ const Chat = () => {
         return () => {
             socket.off('sendMessage');
         };
-    }, [hasAccess]);
+    }, []);
+
+    const send = () => {
+        const message = messageInput.trim();
+        if (message && socket) {
+            socket.emit('message', { user, message, id });
+            setMessageInput("");
+        }
+    }
 
     const handleLeave = () => {
         if (socket) {
@@ -124,22 +122,17 @@ const Chat = () => {
         }
         sessionStorage.removeItem("user");
         sessionStorage.removeItem("room");
+        sessionStorage.removeItem("isRoomOwner");
         navigate("/");
     };
 
-    const handleBackToRequests = () => {
-        navigate("/requests");
+    const handleBackToRooms = () => {
+        if (isRoomOwner) {
+            navigate("/requests");
+        } else {
+            navigate("/rooms");
+        }
     };
-
-    if (!hasAccess) {
-        return (
-            <div className="chatPage relative bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 h-screen w-screen flex justify-center items-center p-4 overflow-hidden">
-                <div className="text-center text-white">
-                    <p className="text-xl">Redirecting to requests...</p>
-                </div>
-            </div>
-        );
-    }
 
     return (
         <div className="chatPage relative bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 h-screen w-screen flex justify-center items-center p-4 overflow-hidden">
@@ -152,9 +145,9 @@ const Chat = () => {
                     <div className="absolute inset-0 bg-gradient-to-r from-blue-500/50 to-purple-500/50 opacity-50"></div>
                     <div className="relative z-10 flex items-center gap-4 w-full">
                         <button 
-                            onClick={handleBackToRequests}
+                            onClick={handleBackToRooms}
                             className="p-2 hover:bg-white/20 rounded-xl transition-all duration-300 cursor-pointer group"
-                            title="Back to Requests"
+                            title="Back"
                         >
                             <ArrowLeft className="w-5 h-5 md:w-6 md:h-6 text-white group-hover:-translate-x-1 transition-transform duration-300" />
                         </button>
@@ -170,6 +163,12 @@ const Chat = () => {
                                 </div>
                                 <span className="text-white/40">•</span>
                                 <span className="text-white/80">Room: {room}</span>
+                                {isRoomOwner && (
+                                    <>
+                                        <span className="text-white/40">•</span>
+                                        <span className="text-yellow-200 text-xs">Owner</span>
+                                    </>
+                                )}
                                 {onlineUsers > 0 && (
                                     <>
                                         <span className="text-white/40">•</span>
