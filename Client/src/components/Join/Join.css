@@ -61,6 +61,11 @@
     animation-delay: 4s;
 }
 
+/* Add to CreateRoom component styles */
+.createRoomPage .animate-blob {
+    animation: blob 7s infinite;
+}
+
 .animate-float {
     animation: float 3s ease-in-out infinite;
 }
