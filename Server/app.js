@@ -41,39 +41,79 @@ app.use(cors({
     },
     credentials: true
 }));
-const port = process.env.PORT || 3000 ; 
-const users = {};
+
+const port = process.env.PORT || 3000; 
+// Store users by room: { roomName: { socketId: { user, room } } }
+const rooms = {};
+// Store socket to room mapping: { socketId: roomName }
+const socketToRoom = {};
 
 io.on("connection",(socket)=>{
     console.log(`New connection: ${socket.id}`);
 
-    socket.on('joined',({user})=>{
-        users[socket.id] = user;
-        console.log(`${user} has joined`);  
+    // Join a room
+    socket.on('joinRoom', ({user, room})=>{
+        if (!room || !user) {
+            socket.emit('error', { message: 'Room and user are required' });
+            return;
+        }
+
+        // Store user in room
+        if (!rooms[room]) {
+            rooms[room] = {};
+        }
+        rooms[room][socket.id] = { user, room };
+        socketToRoom[socket.id] = room;
+        socket.join(room);
+
+        console.log(`${user} joined room: ${room}`);
         
-        // Send welcome message to new user
-        socket.emit('welcome',{
-            user:"Admin",
-            message:`Welcome to ChatVerse, ${users[socket.id]}! Start chatting with others.`,
-            timestamp: new Date().toISOString()
-        }); 
+        // Send room users list to the new user (excluding current user)
+        const roomUsers = Object.values(rooms[room])
+            .map(u => u.user)
+            .filter(u => u !== user);
+        socket.emit('roomUsers', roomUsers);
         
-        // Notify other users
-        socket.broadcast.emit('userJoined',{
-            user:"Admin",
-            message:`${users[socket.id]} has joined the chat`,
+        // Notify others in the room
+        socket.to(room).emit('userJoinedRoom', {
+            user: user,
+            room: room,
             timestamp: new Date().toISOString()
         });
-        
-        // Send current user count to all clients
-        const userCount = Object.keys(users).length;
-        io.emit('userCount', userCount);
+
+        // Send updated room users list to all in room
+        const updatedRoomUsers = Object.values(rooms[room]).map(u => u.user);
+        io.to(room).emit('roomUsersUpdate', updatedRoomUsers);
     });
 
-    socket.on('message',({message,id})=>{
-        if(users[id] && message){
-            io.emit('sendMessage',{
-                user: users[id],
+    // Get room users (for requests page)
+    socket.on('getRoomUsers', ({room})=>{
+        if (!room) {
+            socket.emit('error', { message: 'Room is required' });
+            return;
+        }
+
+        if (rooms[room]) {
+            // Get all users in the room
+            const roomUsers = Object.values(rooms[room]).map(u => u.user);
+            
+            // Filter out current user
+            const currentUser = rooms[room][socket.id]?.user;
+            const otherUsers = roomUsers.filter(u => u !== currentUser);
+            
+            socket.emit('roomUsers', otherUsers);
+        } else {
+            socket.emit('roomUsers', []);
+        }
+    });
+
+    // Send message in room
+    socket.on('message', ({message, id})=>{
+        const room = socketToRoom[id];
+        if (room && rooms[room] && rooms[room][id] && message){
+            const user = rooms[room][id].user;
+            io.to(room).emit('sendMessage', {
+                user: user,
                 message: message,
                 id: id,
                 timestamp: new Date().toISOString()
@@ -81,36 +121,39 @@ io.on("connection",(socket)=>{
         }
     });
 
-    socket.on('disconnect',()=>{
-        const leavingUser = users[socket.id];
-        if(leavingUser){
-            delete users[socket.id];
-            socket.broadcast.emit('leave',{
-                user:"Admin",
-                message:`${leavingUser} has left the chat`,
-                timestamp: new Date().toISOString()
-            });
+    // Disconnect
+    socket.on('disconnect', ()=>{
+        const room = socketToRoom[socket.id];
+        if (room && rooms[room] && rooms[room][socket.id]){
+            const leavingUser = rooms[room][socket.id].user;
+            delete rooms[room][socket.id];
+            delete socketToRoom[socket.id];
             
-            // Update user count
-            const userCount = Object.keys(users).length;
-            io.emit('userCount', userCount);
+            // If room is empty, delete it
+            if (Object.keys(rooms[room]).length === 0) {
+                delete rooms[room];
+            } else {
+                // Notify others in the room
+                socket.to(room).emit('userLeftRoom', {
+                    user: leavingUser,
+                    room: room,
+                    timestamp: new Date().toISOString()
+                });
+
+                // Send updated room users list
+                const updatedRoomUsers = Object.values(rooms[room]).map(u => u.user);
+                io.to(room).emit('roomUsersUpdate', updatedRoomUsers);
+            }
             
-            console.log(`${leavingUser} has left`);
+            console.log(`${leavingUser} left room: ${room}`);
         }
     });
-
-    socket.on('leave',(data)=>{
-        console.log(data.user, data.message);
-    });
-   
 });
 
 app.get("/",(req,res)=>{
     res.send(`server working`);
 });
-server.listen(port,async()=>{
-    
-    console.log(`Server is running on port${port}`);
+
+server.listen(port, async()=>{
+    console.log(`Server is running on port ${port}`);
 });
-
-

@@ -16,12 +16,20 @@ const Chat = () => {
     const [onlineUsers, setOnlineUsers] = useState(0);
     const [hasAccess, setHasAccess] = useState(false);
     const navigate = useNavigate();
-    const user = sessionStorage.getItem("user") || "Anonymous"; 
+    const user = sessionStorage.getItem("user") || "Anonymous";
+    const room = sessionStorage.getItem("room") || "";
 
     // Check if user has accepted request
     useEffect(() => {
+        if (!room || !user) {
+            navigate('/');
+            return;
+        }
+
         const acceptedRequests = JSON.parse(localStorage.getItem('acceptedRequests') || '[]');
-        const hasAccepted = acceptedRequests.some(r => r.from === user || r.to === user);
+        const hasAccepted = acceptedRequests.some(r => 
+            (r.from === user || r.to === user) && r.room === room
+        );
         
         if (!hasAccepted) {
             // Redirect to requests page if no accepted request
@@ -31,7 +39,7 @@ const Chat = () => {
         } else {
             setHasAccess(true);
         }
-    }, [user, navigate]);
+    }, [user, room, navigate]);
 
     const send = () => {
         const message = messageInput.trim();
@@ -42,7 +50,7 @@ const Chat = () => {
     }
 
     useEffect(() => {
-        if (!hasAccess) return;
+        if (!hasAccess || !room || !user) return;
 
         socket = socketIO(ENDPOINT, { 
             transports: ['websocket'],
@@ -55,7 +63,8 @@ const Chat = () => {
             console.log(`Client connected!`);
             setid(socket.id);
             setIsConnected(true);
-            socket.emit('joined', { user });
+            // Join the room
+            socket.emit('joinRoom', { user, room });
         });
 
         socket.on('disconnect', () => {
@@ -68,22 +77,25 @@ const Chat = () => {
             setIsConnected(false);
         });
 
-        socket.on('welcome', (data) => {
-            setMessages((prevMessages) => [...prevMessages, { ...data, timestamp: new Date().toISOString() }]);
-        });
-        
-        socket.on('userJoined', (data) => {
-            setMessages((prevMessages) => [...prevMessages, { ...data, timestamp: new Date().toISOString() }]);
-            setOnlineUsers(prev => prev + 1);
+        socket.on('roomUsersUpdate', (users) => {
+            setOnlineUsers(users.length);
         });
 
-        socket.on('leave', (data) => {
-            setMessages((prevMessages) => [...prevMessages, { ...data, timestamp: new Date().toISOString() }]);
-            setOnlineUsers(prev => Math.max(0, prev - 1));
+        socket.on('userJoinedRoom', (data) => {
+            setMessages((prevMessages) => [...prevMessages, {
+                user: "Admin",
+                message: `${data.user} joined the room`,
+                timestamp: new Date().toISOString()
+            }]);
+            socket.emit('getRoomUsers', { room });
         });
 
-        socket.on('userCount', (count) => {
-            setOnlineUsers(count);
+        socket.on('userLeftRoom', (data) => {
+            setMessages((prevMessages) => [...prevMessages, {
+                user: "Admin",
+                message: `${data.user} left the room`,
+                timestamp: new Date().toISOString()
+            }]);
         });
 
         return () => {
@@ -92,7 +104,7 @@ const Chat = () => {
                 socket.disconnect();
             }
         };
-    }, [hasAccess, user]);
+    }, [hasAccess, room, user]);
 
     useEffect(() => {
         if (!socket || !hasAccess) return;
@@ -111,6 +123,7 @@ const Chat = () => {
             socket.disconnect();
         }
         sessionStorage.removeItem("user");
+        sessionStorage.removeItem("room");
         navigate("/");
     };
 
@@ -155,6 +168,8 @@ const Chat = () => {
                                     <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-300 animate-pulse' : 'bg-red-300'}`}></div>
                                     <span className="font-medium">{isConnected ? 'Connected' : 'Disconnected'}</span>
                                 </div>
+                                <span className="text-white/40">•</span>
+                                <span className="text-white/80">Room: {room}</span>
                                 {onlineUsers > 0 && (
                                     <>
                                         <span className="text-white/40">•</span>
@@ -239,6 +254,13 @@ const Chat = () => {
                             <Send className="w-5 h-5 md:w-6 md:h-6" />
                         </button>
                     </div>
+                </div>
+
+                {/* Made by Credit */}
+                <div className="absolute bottom-2 right-4 z-20">
+                    <p className="text-gray-400 text-xs">
+                        Made by <span className="text-purple-500 font-semibold">Kartik Naphade</span>
+                    </p>
                 </div>
             </div>
         </div>

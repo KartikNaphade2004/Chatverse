@@ -1,19 +1,22 @@
 import React , {useState} from 'react'
 import './Join.css'
 import logo from '../../images/logo.png'
-import {Link, useNavigate} from 'react-router-dom'
-import { ArrowRight, Sparkles } from 'lucide-react'
+import {useNavigate} from 'react-router-dom'
+import { ArrowRight, Sparkles, Users } from 'lucide-react'
 
 const Join = () => {
-   const [username , setUsername] = useState(""); 
-   const [focused, setFocused] = useState(false);
+   const [roomName, setRoomName] = useState("");
+   const [username, setUsername] = useState("");
+   const [focused, setFocused] = useState('room');
    const navigate = useNavigate();
 
-   const sendUser = () =>{
-    sessionStorage.setItem("user", username);
-    setUsername("");
-    // Redirect to requests page instead of chat
-    navigate('/requests');
+   const handleJoin = () => {
+    if (roomName.trim() && username.trim()) {
+      sessionStorage.setItem("room", roomName.trim());
+      sessionStorage.setItem("user", username.trim());
+      // Redirect to requests page
+      navigate('/requests');
+    }
    }
 
   return (
@@ -65,37 +68,71 @@ const Join = () => {
           </div>
 
           {/* Join Form */}
-          <div className='space-y-6'>
+          <div className='space-y-4'>
+            {/* Room Name Input */}
             <div className='relative'>
+              <label className="block text-white/80 text-sm font-medium mb-2 ml-1">
+                <Users className="w-4 h-4 inline mr-1" />
+                Enter Room Name
+              </label>
               <input
                 type="text"
                 className={`w-full p-4 text-lg bg-white/10 backdrop-blur-sm text-white placeholder-white/60 rounded-xl outline-none border-2 transition-all duration-300 ${
-                  focused 
+                  focused === 'room'
                     ? 'border-purple-400 shadow-lg shadow-purple-500/50 scale-[1.02]' 
                     : 'border-white/30 hover:border-white/50'
                 }`}
-                placeholder="Enter your name"
+                placeholder="e.g., Room123"
+                value={roomName}
+                onChange={(e) => setRoomName(e.target.value)}
+                onFocus={() => setFocused('room')}
+                onBlur={() => setFocused('')}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && roomName.trim() && !username.trim()) {
+                    document.getElementById('username').focus();
+                  } else if (e.key === 'Enter' && roomName.trim() && username.trim()) {
+                    handleJoin();
+                  }
+                }}
+                id="roomName"
+              />
+              <div className={`absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-xl -z-10 blur-xl transition-opacity duration-300 ${focused === 'room' ? 'opacity-100' : 'opacity-0'}`}></div>
+            </div>
+
+            {/* Username Input */}
+            <div className='relative'>
+              <label className="block text-white/80 text-sm font-medium mb-2 ml-1">
+                Enter Your Name
+              </label>
+              <input
+                type="text"
+                className={`w-full p-4 text-lg bg-white/10 backdrop-blur-sm text-white placeholder-white/60 rounded-xl outline-none border-2 transition-all duration-300 ${
+                  focused === 'username'
+                    ? 'border-purple-400 shadow-lg shadow-purple-500/50 scale-[1.02]' 
+                    : 'border-white/30 hover:border-white/50'
+                }`}
+                placeholder="Your name"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                onFocus={() => setFocused(true)}
-                onBlur={() => setFocused(false)}
+                onFocus={() => setFocused('username')}
+                onBlur={() => setFocused('')}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && username.trim()) {
-                    sendUser();
+                  if (e.key === 'Enter' && roomName.trim() && username.trim()) {
+                    handleJoin();
                   }
                 }}
                 id="username"
               />
-              <div className={`absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-xl -z-10 blur-xl transition-opacity duration-300 ${focused ? 'opacity-100' : 'opacity-0'}`}></div>
+              <div className={`absolute inset-0 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-xl -z-10 blur-xl transition-opacity duration-300 ${focused === 'username' ? 'opacity-100' : 'opacity-0'}`}></div>
             </div>
 
             <button 
-              className="group w-full p-4 text-lg bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none relative overflow-hidden"
-              onClick={sendUser}
-              disabled={!username.trim()}
+              className="group w-full p-4 text-lg bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none relative overflow-hidden mt-6"
+              onClick={handleJoin}
+              disabled={!roomName.trim() || !username.trim()}
             >
               <span className="relative z-10 flex items-center justify-center gap-2">
-                Continue
+                Join Room
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </span>
               <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -107,6 +144,13 @@ const Join = () => {
             <div className="h-px w-16 bg-gradient-to-r from-transparent to-white/30"></div>
             <span>Secure & Fast</span>
             <div className="h-px w-16 bg-gradient-to-l from-transparent to-white/30"></div>
+          </div>
+
+          {/* Made by Credit */}
+          <div className="mt-6 text-center">
+            <p className="text-white/50 text-xs">
+              Made with ❤️ by <span className="text-purple-300 font-semibold">Kartik Naphade</span>
+            </p>
           </div>
         </div>
       </div>

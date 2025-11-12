@@ -1,37 +1,97 @@
 import React, { useState, useEffect } from 'react';
 import { UserPlus, Check, X, Users, MessageCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import socketIO from 'socket.io-client';
+
+const ENDPOINT = import.meta.env.VITE_SERVER_URL || "https://chatverse-backend-1041.onrender.com";
 
 const Requests = () => {
     const [requests, setRequests] = useState([]);
-    const [onlineUsers, setOnlineUsers] = useState([]);
+    const [roomUsers, setRoomUsers] = useState([]);
     const [requestedUsers, setRequestedUsers] = useState(new Set());
+    const [socket, setSocket] = useState(null);
     const navigate = useNavigate();
     const currentUser = sessionStorage.getItem("user") || "Anonymous";
+    const currentRoom = sessionStorage.getItem("room") || "";
+
+    // Initialize socket and join room
+    useEffect(() => {
+        if (!currentRoom || !currentUser) {
+            navigate('/');
+            return;
+        }
+
+        const newSocket = socketIO(ENDPOINT, {
+            transports: ['websocket'],
+            reconnection: true,
+            reconnectionDelay: 1000,
+            reconnectionAttempts: 5
+        });
+
+        newSocket.on('connect', () => {
+            console.log('Connected to server');
+            // Join the room
+            newSocket.emit('joinRoom', { user: currentUser, room: currentRoom });
+        });
+
+        newSocket.on('roomUsers', (users) => {
+            // Filter out current user
+            const otherUsers = users.filter(u => u !== currentUser);
+            setRoomUsers(otherUsers);
+        });
+
+        newSocket.on('roomUsersUpdate', (users) => {
+            // Filter out current user
+            const otherUsers = users.filter(u => u !== currentUser);
+            setRoomUsers(otherUsers);
+        });
+
+        newSocket.on('userJoinedRoom', (data) => {
+            console.log(`${data.user} joined room`);
+            // Request updated user list
+            newSocket.emit('getRoomUsers', { room: currentRoom });
+        });
+
+        newSocket.on('userLeftRoom', (data) => {
+            console.log(`${data.user} left room`);
+            // Request updated user list
+            newSocket.emit('getRoomUsers', { room: currentRoom });
+        });
+
+        newSocket.on('error', (error) => {
+            console.error('Socket error:', error);
+        });
+
+        setSocket(newSocket);
+
+        // Get room users
+        newSocket.emit('getRoomUsers', { room: currentRoom });
+
+        return () => {
+            if (newSocket) {
+                newSocket.disconnect();
+            }
+        };
+    }, [currentRoom, currentUser, navigate]);
 
     // Load requests from localStorage
     useEffect(() => {
         const savedRequests = JSON.parse(localStorage.getItem('chatRequests') || '[]');
-        const savedAccepted = JSON.parse(localStorage.getItem('acceptedRequests') || '[]');
-        setRequests(savedRequests.filter(r => !r.accepted && !r.rejected));
+        // Filter requests by room
+        const roomRequests = savedRequests.filter(r => r.room === currentRoom && !r.accepted && !r.rejected);
+        setRequests(roomRequests);
         
-        // Get list of users we've already requested
-        const requested = savedRequests.filter(r => r.from === currentUser).map(r => r.to);
+        // Get list of users we've already requested in this room
+        const requested = roomRequests.filter(r => r.from === currentUser).map(r => r.to);
         setRequestedUsers(new Set(requested));
-    }, [currentUser]);
-
-    // Get online users (simulated - in real app, this would come from server)
-    useEffect(() => {
-        // Simulate online users
-        const users = ['Alice', 'Bob', 'Charlie', 'Diana', 'Eve'].filter(u => u !== currentUser);
-        setOnlineUsers(users);
-    }, [currentUser]);
+    }, [currentUser, currentRoom]);
 
     const sendRequest = (toUser) => {
         const newRequest = {
             id: Date.now(),
             from: currentUser,
             to: toUser,
+            room: currentRoom,
             timestamp: new Date().toISOString(),
             status: 'pending'
         };
@@ -78,9 +138,12 @@ const Requests = () => {
         }
     };
 
-    const pendingRequests = requests.filter(r => r.to === currentUser && r.status === 'pending');
-    const sentRequests = requests.filter(r => r.from === currentUser && r.status === 'pending');
-    const availableUsers = onlineUsers.filter(u => 
+    const pendingRequests = requests.filter(r => r.to === currentUser && r.status === 'pending' && r.room === currentRoom);
+    const sentRequests = requests.filter(r => r.from === currentUser && r.status === 'pending' && r.room === currentRoom);
+    
+    // Available users = room users - requested users - sent requests - pending requests
+    const availableUsers = roomUsers.filter(u => 
+        u !== currentUser &&
         !requestedUsers.has(u) && 
         !sentRequests.some(r => r.to === u) &&
         !pendingRequests.some(r => r.from === u)
@@ -97,7 +160,8 @@ const Requests = () => {
                     <h1 className="text-white text-4xl md:text-5xl font-extrabold mb-2 bg-gradient-to-r from-blue-300 via-purple-300 to-pink-300 bg-clip-text text-transparent">
                         Chat Requests
                     </h1>
-                    <p className="text-purple-200 text-lg">Manage your chat connections</p>
+                    <p className="text-purple-200 text-lg">Room: <span className="font-semibold text-white">{currentRoom}</span></p>
+                    <p className="text-purple-300 text-sm mt-1">Users in this room: {roomUsers.length + 1}</p>
                 </div>
 
                 {/* Pending Requests */}
@@ -169,23 +233,24 @@ const Requests = () => {
                     </div>
                 )}
 
-                {/* Available Users */}
+                {/* Available Users in Room */}
                 <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-6 md:p-8 border border-white/20 shadow-2xl">
                     <h2 className="text-white text-xl md:text-2xl font-bold mb-4 flex items-center gap-2">
                         <Users className="w-6 h-6" />
-                        Available Users ({availableUsers.length})
+                        Users in Room ({availableUsers.length})
                     </h2>
                     {availableUsers.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             {availableUsers.map((user) => (
                                 <div key={user} className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 flex items-center justify-between border border-white/20 hover:bg-white/20 transition-all duration-300">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-teal-600 flex items-center justify-center text-white font-bold text-lg">
+                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-teal-600 flex items-center justify-center text-white font-bold text-lg relative">
                                             {user.charAt(0).toUpperCase()}
+                                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
                                         </div>
                                         <div>
                                             <h3 className="text-white font-semibold text-lg">{user}</h3>
-                                            <p className="text-purple-200 text-sm">Online</p>
+                                            <p className="text-purple-200 text-sm">Online in room</p>
                                         </div>
                                     </div>
                                     <button
@@ -199,7 +264,9 @@ const Requests = () => {
                         </div>
                     ) : (
                         <div className="text-center py-8 text-purple-200">
-                            <p>No available users at the moment</p>
+                            <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                            <p>No other users in this room at the moment</p>
+                            <p className="text-sm mt-2 text-purple-300">Wait for others to join or try a different room</p>
                         </div>
                     )}
                 </div>
@@ -208,14 +275,20 @@ const Requests = () => {
                 {pendingRequests.length === 0 && sentRequests.length === 0 && availableUsers.length === 0 && (
                     <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-12 border border-white/20 shadow-2xl text-center">
                         <MessageCircle className="w-16 h-16 mx-auto mb-4 text-purple-300 opacity-50" />
-                        <p className="text-white text-xl font-semibold mb-2">No requests yet</p>
-                        <p className="text-purple-200">Send a request to start chatting!</p>
+                        <p className="text-white text-xl font-semibold mb-2">No users in room</p>
+                        <p className="text-purple-200">Wait for others to join room: <span className="font-semibold text-white">{currentRoom}</span></p>
                     </div>
                 )}
+
+                {/* Made by Credit */}
+                <div className="text-center mt-8 pb-4">
+                    <p className="text-white/50 text-sm">
+                        Made with ❤️ by <span className="text-purple-300 font-semibold">Kartik Naphade</span>
+                    </p>
+                </div>
             </div>
         </div>
     );
 };
 
 export default Requests;
-
