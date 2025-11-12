@@ -1,33 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Plus, Zap, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Plus, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import socketIO from 'socket.io-client';
 
 const ENDPOINT = import.meta.env.VITE_SERVER_URL || "https://chatverse-backend-1041.onrender.com";
-
-// Shared socket instance for faster connections
-let sharedSocket = null;
-
-const getSharedSocket = () => {
-    if (!sharedSocket || !sharedSocket.connected) {
-        sharedSocket = socketIO(ENDPOINT, {
-            transports: ['websocket', 'polling'],
-            reconnection: true,
-            reconnectionDelay: 1000,
-            reconnectionAttempts: 5
-        });
-    }
-    return sharedSocket;
-};
 
 const CreateRoom = () => {
     const [roomName, setRoomName] = useState("");
     const [focused, setFocused] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
     const [error, setError] = useState("");
+    const [status, setStatus] = useState("");
     const navigate = useNavigate();
     const username = sessionStorage.getItem("user") || "";
     const socketRef = useRef(null);
+    const timeoutRef = useRef(null);
+    const creatingRoomRef = useRef(null);
 
     useEffect(() => {
         if (!username) {
@@ -35,69 +23,146 @@ const CreateRoom = () => {
             return;
         }
 
-        // Get or create shared socket
-        const socket = getSharedSocket();
+        // Create socket connection
+        const socket = socketIO(ENDPOINT, {
+            transports: ['websocket', 'polling'],
+            reconnection: true,
+            reconnectionDelay: 1000,
+            reconnectionAttempts: 5
+        });
+
         socketRef.current = socket;
 
-        // Set up listeners
+        // Set up event listeners once
         const handleRoomCreated = (data) => {
-            if (data.room === roomName.trim()) {
-                sessionStorage.setItem("room", roomName.trim());
+            console.log('Room created event received:', data);
+            const currentRoom = creatingRoomRef.current;
+            if (currentRoom && data.room === currentRoom) {
+                console.log('Room created successfully:', currentRoom);
+                sessionStorage.setItem("room", currentRoom);
                 sessionStorage.setItem("isRoomOwner", "true");
                 setIsCreating(false);
+                setStatus("");
+                creatingRoomRef.current = null;
+                
+                if (timeoutRef.current) {
+                    clearTimeout(timeoutRef.current);
+                }
+                
                 navigate('/requests');
             }
         };
 
         const handleRoomExists = (data) => {
-            if (data.message && data.message.includes(roomName.trim())) {
+            console.log('Room exists event received:', data);
+            const currentRoom = creatingRoomRef.current;
+            if (currentRoom) {
                 setError('Room already exists! Please choose a different name.');
                 setIsCreating(false);
+                setStatus("");
+                creatingRoomRef.current = null;
+                
+                if (timeoutRef.current) {
+                    clearTimeout(timeoutRef.current);
+                }
             }
         };
 
         const handleError = (errorData) => {
-            if (errorData.message) {
-                setError(errorData.message);
+            console.error('Socket error received:', errorData);
+            const currentRoom = creatingRoomRef.current;
+            if (currentRoom) {
+                setError(errorData.message || 'An error occurred. Please try again.');
                 setIsCreating(false);
+                setStatus("");
+                creatingRoomRef.current = null;
+                
+                if (timeoutRef.current) {
+                    clearTimeout(timeoutRef.current);
+                }
             }
         };
 
+        const handleConnect = () => {
+            console.log('Socket connected:', socket.id);
+            setStatus("");
+            // If we're trying to create a room, emit it now
+            if (creatingRoomRef.current && isCreating) {
+                console.log('Socket connected, creating room:', creatingRoomRef.current);
+                socket.emit('createRoom', {
+                    room: creatingRoomRef.current,
+                    user: username
+                });
+            }
+        };
+
+        const handleConnectError = (err) => {
+            console.error('Connection error:', err);
+            setError('Failed to connect to server. Please check your connection.');
+            setIsCreating(false);
+            setStatus("");
+            creatingRoomRef.current = null;
+        };
+
+        socket.on('connect', handleConnect);
         socket.on('roomCreated', handleRoomCreated);
         socket.on('roomExists', handleRoomExists);
         socket.on('error', handleError);
+        socket.on('connect_error', handleConnectError);
 
         return () => {
             if (socketRef.current) {
+                socketRef.current.off('connect', handleConnect);
                 socketRef.current.off('roomCreated', handleRoomCreated);
                 socketRef.current.off('roomExists', handleRoomExists);
                 socketRef.current.off('error', handleError);
+                socketRef.current.off('connect_error', handleConnectError);
+            }
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
             }
         };
-    }, [username, navigate, roomName]);
+    }, [username, navigate, isCreating]);
 
     const handleCreateRoom = () => {
-        if (roomName.trim() && username && !isCreating) {
+        const trimmedRoomName = roomName.trim();
+        if (trimmedRoomName && username && !isCreating) {
             setError("");
+            setStatus("Creating room...");
             setIsCreating(true);
+            creatingRoomRef.current = trimmedRoomName;
 
-            const socket = socketRef.current || getSharedSocket();
-            socketRef.current = socket;
+            const socket = socketRef.current;
 
-            // Optimistic UI update - if socket is already connected, create immediately
+            if (!socket) {
+                setError('Socket not initialized. Please refresh the page.');
+                setIsCreating(false);
+                creatingRoomRef.current = null;
+                return;
+            }
+
+            // Set timeout for room creation
+            timeoutRef.current = setTimeout(() => {
+                if (isCreating && creatingRoomRef.current) {
+                    console.error('Room creation timeout');
+                    setError('Room creation is taking too long. Please try again.');
+                    setIsCreating(false);
+                    setStatus("");
+                    creatingRoomRef.current = null;
+                }
+            }, 10000);
+
+            // If socket is connected, emit immediately
             if (socket.connected) {
+                console.log('Socket connected, emitting createRoom:', trimmedRoomName);
                 socket.emit('createRoom', {
-                    room: roomName.trim(),
+                    room: trimmedRoomName,
                     user: username
                 });
             } else {
-                // Wait for connection
-                socket.once('connect', () => {
-                    socket.emit('createRoom', {
-                        room: roomName.trim(),
-                        user: username
-                    });
-                });
+                console.log('Socket not connected, waiting for connection...');
+                setStatus("Connecting to server...");
+                // The connect handler will emit when connected
             }
         }
     };
@@ -141,6 +206,12 @@ const CreateRoom = () => {
                             <div className="bg-red-50 border-2 border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm font-medium animate-fade-in flex items-center gap-2">
                                 <span>⚠️</span>
                                 {error}
+                            </div>
+                        )}
+                        {status && (
+                            <div className="bg-blue-50 border-2 border-blue-200 text-blue-700 px-4 py-3 rounded-xl text-sm font-medium animate-fade-in flex items-center gap-2">
+                                <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                                {status}
                             </div>
                         )}
                         <div className="relative">
@@ -188,7 +259,7 @@ const CreateRoom = () => {
                             {isCreating ? (
                                 <>
                                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                    Creating...
+                                    {status || "Creating..."}
                                 </>
                             ) : (
                                 <>
