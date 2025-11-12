@@ -28,28 +28,22 @@ const Requests = () => {
             console.log('Connected to server');
             
             if (isRoomOwner) {
-                // Room owner: get join requests
                 newSocket.emit('getJoinRequests', { room: currentRoom });
             } else {
-                // Regular user: check if request was accepted
                 newSocket.emit('getRoomUsers', { room: currentRoom });
             }
         });
 
-        // Room owner events
         if (isRoomOwner) {
             newSocket.on('joinRequests', (requests) => {
                 setJoinRequests(requests);
             });
 
             newSocket.on('newJoinRequest', (data) => {
-                // Refresh join requests
                 newSocket.emit('getJoinRequests', { room: currentRoom });
             });
         } else {
-            // Regular user events
             newSocket.on('joinRequestAccepted', (data) => {
-                // Request accepted, can now join chat
                 setTimeout(() => {
                     navigate('/chat');
                 }, 500);
@@ -78,7 +72,6 @@ const Requests = () => {
                 requestingSocketId: requestingSocketId
             });
             
-            // Remove from list
             setJoinRequests(prev => prev.filter(req => req.user !== requestingUser));
         }
     };
@@ -90,7 +83,6 @@ const Requests = () => {
                 requestingUser: requestingUser
             });
             
-            // Remove from list
             setJoinRequests(prev => prev.filter(req => req.user !== requestingUser));
         }
     };
@@ -100,54 +92,51 @@ const Requests = () => {
     };
 
     if (isRoomOwner) {
-        // Room owner view: show join requests
         return (
-            <div className="requestsPage relative bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 min-h-screen w-screen flex flex-col items-center p-4 md:p-8 overflow-hidden">
-                <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-20"></div>
-
+            <div className="requestsPage relative bg-gray-50 min-h-screen w-screen flex flex-col items-center p-4 md:p-8">
                 <div className="relative z-10 w-full max-w-4xl mx-auto space-y-6">
-                    <div className="text-center mb-8">
+                    <div className="bg-white rounded-2xl p-6 shadow-md border border-gray-200">
                         <button
                             onClick={handleBackToRooms}
-                            className="absolute left-0 top-0 p-2 hover:bg-white/10 rounded-xl text-white transition-all"
+                            className="mb-4 p-2 hover:bg-gray-100 rounded-lg text-gray-600 transition-all"
                         >
-                            <ArrowLeft className="w-6 h-6" />
+                            <ArrowLeft className="w-5 h-5" />
                         </button>
-                        <h1 className="text-white text-4xl md:text-5xl font-extrabold mb-2 bg-gradient-to-r from-blue-300 via-purple-300 to-pink-300 bg-clip-text text-transparent">
+                        <h1 className="text-gray-800 text-3xl md:text-4xl font-bold mb-2">
                             Room: {currentRoom}
                         </h1>
-                        <p className="text-purple-200 text-lg">Manage join requests for your room</p>
+                        <p className="text-gray-500">Manage join requests for your room</p>
                     </div>
 
                     {joinRequests.length > 0 ? (
-                        <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-6 md:p-8 border border-white/20 shadow-2xl">
-                            <h2 className="text-white text-xl md:text-2xl font-bold mb-4 flex items-center gap-2">
-                                <UserPlus className="w-6 h-6" />
+                        <div className="bg-white rounded-xl p-6 shadow-md border border-gray-200">
+                            <h2 className="text-gray-800 text-xl font-bold mb-4 flex items-center gap-2">
+                                <UserPlus className="w-5 h-5" />
                                 Join Requests ({joinRequests.length})
                             </h2>
                             <div className="space-y-3">
                                 {joinRequests.map((request, index) => (
-                                    <div key={index} className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 flex items-center justify-between border border-white/20">
+                                    <div key={index} className="bg-gray-50 rounded-lg p-4 flex items-center justify-between border border-gray-200">
                                         <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
+                                            <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-lg">
                                                 {request.user.charAt(0).toUpperCase()}
                                             </div>
                                             <div>
-                                                <h3 className="text-white font-semibold text-lg">{request.user}</h3>
-                                                <p className="text-purple-200 text-sm">Wants to join your room</p>
+                                                <h3 className="text-gray-800 font-semibold text-lg">{request.user}</h3>
+                                                <p className="text-gray-500 text-sm">Wants to join your room</p>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <button
                                                 onClick={() => acceptRequest(request.user, request.socketId)}
-                                                className="p-3 bg-green-500 hover:bg-green-600 rounded-xl text-white transition-all duration-300 hover:scale-110 shadow-lg"
+                                                className="p-2.5 bg-green-500 hover:bg-green-600 rounded-lg text-white transition-all hover:scale-110 shadow-md"
                                                 title="Accept"
                                             >
                                                 <Check className="w-5 h-5" />
                                             </button>
                                             <button
                                                 onClick={() => rejectRequest(request.user)}
-                                                className="p-3 bg-red-500 hover:bg-red-600 rounded-xl text-white transition-all duration-300 hover:scale-110 shadow-lg"
+                                                className="p-2.5 bg-red-500 hover:bg-red-600 rounded-lg text-white transition-all hover:scale-110 shadow-md"
                                                 title="Reject"
                                             >
                                                 <X className="w-5 h-5" />
@@ -158,33 +147,30 @@ const Requests = () => {
                             </div>
                         </div>
                     ) : (
-                        <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-12 border border-white/20 shadow-2xl text-center">
-                            <MessageCircle className="w-16 h-16 mx-auto mb-4 text-purple-300 opacity-50" />
-                            <p className="text-white text-xl font-semibold mb-2">No join requests</p>
-                            <p className="text-purple-200">Waiting for users to request to join your room...</p>
+                        <div className="bg-white rounded-xl p-12 border border-gray-200 shadow-md text-center">
+                            <MessageCircle className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                            <p className="text-gray-800 text-xl font-semibold mb-2">No join requests</p>
+                            <p className="text-gray-500">Waiting for users to request to join your room...</p>
                         </div>
                     )}
 
-                    <div className="text-center mt-8 pb-4">
-                        <p className="text-white/50 text-sm">
-                            Made with ❤️ by <span className="text-purple-300 font-semibold">Kartik Naphade</span>
+                    <div className="text-center pb-4">
+                        <p className="text-gray-400 text-sm">
+                            Made with ❤️ by <span className="text-blue-600 font-semibold">Kartik Naphade</span>
                         </p>
                     </div>
                 </div>
             </div>
         );
     } else {
-        // Regular user view: waiting for acceptance
         return (
-            <div className="requestsPage relative bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 min-h-screen w-screen flex flex-col items-center p-4 md:p-8 overflow-hidden">
-                <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-20"></div>
-
+            <div className="requestsPage relative bg-gray-50 min-h-screen w-screen flex flex-col items-center p-4 md:p-8">
                 <div className="relative z-10 w-full max-w-4xl mx-auto flex items-center justify-center min-h-screen">
-                    <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-12 border border-white/20 shadow-2xl text-center">
-                        <MessageCircle className="w-16 h-16 mx-auto mb-4 text-purple-300 opacity-50 animate-pulse" />
-                        <p className="text-white text-xl font-semibold mb-2">Waiting for approval</p>
-                        <p className="text-purple-200">Your request to join <span className="font-semibold text-white">{currentRoom}</span> has been sent</p>
-                        <p className="text-purple-300 text-sm mt-2">Waiting for room owner to accept...</p>
+                    <div className="bg-white rounded-xl p-12 border border-gray-200 shadow-md text-center">
+                        <MessageCircle className="w-16 h-16 mx-auto mb-4 text-gray-300 animate-pulse" />
+                        <p className="text-gray-800 text-xl font-semibold mb-2">Waiting for approval</p>
+                        <p className="text-gray-600">Your request to join <span className="font-semibold text-gray-800">{currentRoom}</span> has been sent</p>
+                        <p className="text-gray-500 text-sm mt-2">Waiting for room owner to accept...</p>
                     </div>
                 </div>
             </div>
