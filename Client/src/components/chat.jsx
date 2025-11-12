@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import socketIO from "socket.io-client"
 import ReactScrollToBottom  from "react-scroll-to-bottom";
-import { Send, Users, X, MessageCircle } from 'lucide-react';
+import { Send, Users, X, MessageCircle, ArrowLeft } from 'lucide-react';
 import Message from "./Message.jsx";
+import { useNavigate } from 'react-router-dom';
 
 let socket;
 const ENDPOINT = import.meta.env.VITE_SERVER_URL || "https://chatverse-backend-1041.onrender.com";
@@ -13,19 +14,36 @@ const Chat = () => {
     const [messageInput, setMessageInput] = useState("");
     const [isConnected, setIsConnected] = useState(false);
     const [onlineUsers, setOnlineUsers] = useState(0);
-    const [isTyping, setIsTyping] = useState(false);
+    const [hasAccess, setHasAccess] = useState(false);
+    const navigate = useNavigate();
     const user = sessionStorage.getItem("user") || "Anonymous"; 
+
+    // Check if user has accepted request
+    useEffect(() => {
+        const acceptedRequests = JSON.parse(localStorage.getItem('acceptedRequests') || '[]');
+        const hasAccepted = acceptedRequests.some(r => r.from === user || r.to === user);
+        
+        if (!hasAccepted) {
+            // Redirect to requests page if no accepted request
+            setTimeout(() => {
+                navigate('/requests');
+            }, 1000);
+        } else {
+            setHasAccess(true);
+        }
+    }, [user, navigate]);
 
     const send = () => {
         const message = messageInput.trim();
-        if (message && socket) {
+        if (message && socket && hasAccess) {
             socket.emit('message', { user, message, id });
             setMessageInput("");
-            setIsTyping(false);
         }
     }
 
     useEffect(() => {
+        if (!hasAccess) return;
+
         socket = socketIO(ENDPOINT, { 
             transports: ['websocket'],
             reconnection: true,
@@ -74,10 +92,10 @@ const Chat = () => {
                 socket.disconnect();
             }
         };
-    }, []);
+    }, [hasAccess, user]);
 
     useEffect(() => {
-        if (!socket) return;
+        if (!socket || !hasAccess) return;
 
         socket.on('sendMessage', (data) => {
             setMessages((prevMessages) => [...prevMessages, { ...data, timestamp: new Date().toISOString() }]);
@@ -86,24 +104,29 @@ const Chat = () => {
         return () => {
             socket.off('sendMessage');
         };
-    }, []);
-
-    // Handle typing indicator
-    useEffect(() => {
-        if (messageInput.trim()) {
-            setIsTyping(true);
-        } else {
-            setIsTyping(false);
-        }
-    }, [messageInput]);
+    }, [hasAccess]);
 
     const handleLeave = () => {
         if (socket) {
             socket.disconnect();
         }
         sessionStorage.removeItem("user");
-        window.location.href = "/";
+        navigate("/");
     };
+
+    const handleBackToRequests = () => {
+        navigate("/requests");
+    };
+
+    if (!hasAccess) {
+        return (
+            <div className="chatPage relative bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 h-screen w-screen flex justify-center items-center p-4 overflow-hidden">
+                <div className="text-center text-white">
+                    <p className="text-xl">Redirecting to requests...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="chatPage relative bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 h-screen w-screen flex justify-center items-center p-4 overflow-hidden">
@@ -112,9 +135,16 @@ const Chat = () => {
             
             <div className="chatContainer relative z-10 max-md:w-full max-md:h-full bg-white/95 backdrop-blur-xl h-[90%] w-[95%] max-w-5xl box-border rounded-3xl shadow-2xl overflow-hidden flex flex-col border border-white/30">
                 {/* Header */}
-                <div className="header relative bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 h-[10%] min-h-[80px] flex items-center justify-between px-6 md:px-8 shadow-xl">
+                <div className="header relative bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 h-auto min-h-[80px] flex items-center justify-between px-6 md:px-8 py-4 shadow-xl flex-shrink-0">
                     <div className="absolute inset-0 bg-gradient-to-r from-blue-500/50 to-purple-500/50 opacity-50"></div>
                     <div className="relative z-10 flex items-center gap-4 w-full">
+                        <button 
+                            onClick={handleBackToRequests}
+                            className="p-2 hover:bg-white/20 rounded-xl transition-all duration-300 cursor-pointer group"
+                            title="Back to Requests"
+                        >
+                            <ArrowLeft className="w-5 h-5 md:w-6 md:h-6 text-white group-hover:-translate-x-1 transition-transform duration-300" />
+                        </button>
                         <div className="bg-white/20 backdrop-blur-sm p-3 rounded-xl shadow-lg">
                             <MessageCircle className="w-6 h-6 md:w-7 md:h-7 text-white" />
                         </div>
@@ -146,8 +176,8 @@ const Chat = () => {
                     </div>
                 </div>
 
-                {/* Chat Box */}
-                <ReactScrollToBottom className="chatBox h-[78%] box-border overflow-y-auto flex flex-col bg-gradient-to-b from-gray-50 to-white p-4 md:p-6">
+                {/* Chat Box - Fixed padding to prevent message hiding */}
+                <ReactScrollToBottom className="chatBox flex-1 min-h-0 overflow-y-auto flex flex-col bg-gradient-to-b from-gray-50 to-white pt-6 pb-6 px-4 md:px-6">
                     {messages.length === 0 ? (
                         <div className="flex items-center justify-center h-full text-gray-400">
                             <div className="text-center space-y-4">
@@ -162,27 +192,29 @@ const Chat = () => {
                             </div>
                         </div>
                     ) : (
-                        messages.map((item, i) => (
-                            <div key={i} className="message-enter">
-                                <Message 
-                                    user={item.user} 
-                                    message={item.message} 
-                                    classs={item.id === id ? 'right' : 'left'}
-                                    timestamp={item.timestamp}
-                                />
-                            </div>
-                        ))
+                        <div className="space-y-1">
+                            {messages.map((item, i) => (
+                                <div key={i} className="message-enter">
+                                    <Message 
+                                        user={item.user} 
+                                        message={item.message} 
+                                        classs={item.id === id ? 'right' : 'left'}
+                                        timestamp={item.timestamp}
+                                    />
+                                </div>
+                            ))}
+                        </div>
                     )}
                 </ReactScrollToBottom>
 
-                {/* Input Box */}
-                <div className="inputBox relative flex border-t border-gray-200/50 h-[12%] min-h-[80px] box-border bg-white/80 backdrop-blur-sm">
+                {/* Input Box - Fixed to bottom with proper padding */}
+                <div className="inputBox relative flex border-t border-gray-200/50 h-auto min-h-[90px] box-border bg-white/80 backdrop-blur-sm flex-shrink-0">
                     <div className="absolute inset-0 bg-gradient-to-r from-blue-50/50 to-purple-50/50"></div>
-                    <div className="relative z-10 w-full flex items-center px-4 md:px-6 gap-3">
+                    <div className="relative z-10 w-full flex items-center px-4 md:px-6 py-4 gap-3">
                         <input 
                             type="text" 
                             id="chatInput" 
-                            className="flex-1 bg-white/60 backdrop-blur-sm focus:bg-white text-gray-800 focus:ring-0 focus:outline-none px-5 py-4 text-base md:text-lg rounded-2xl border-2 border-gray-200/50 focus:border-purple-400 transition-all duration-300 placeholder-gray-400 shadow-sm" 
+                            className="flex-1 bg-white/60 backdrop-blur-sm focus:bg-white text-gray-800 focus:ring-0 focus:outline-none px-5 py-3.5 text-base md:text-lg rounded-2xl border-2 border-gray-200/50 focus:border-purple-400 transition-all duration-300 placeholder-gray-400 shadow-sm" 
                             placeholder={isConnected ? "Type your message..." : "Connecting..."}
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter' && !e.shiftKey) {

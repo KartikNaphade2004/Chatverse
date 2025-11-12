@@ -1,16 +1,21 @@
 import React , {useState} from 'react'
 import './Join.css'
 import logo from '../../images/logo.png'
-import {Link} from 'react-router-dom'
+import {Link, useNavigate} from 'react-router-dom'
 import { ArrowRight, Sparkles } from 'lucide-react'
 
 const Join = () => {
    const [username , setUsername] = useState(""); 
    const [focused, setFocused] = useState(false);
+   const navigate = useNavigate();
+
    const sendUser = () =>{
     sessionStorage.setItem("user", username);
-      setUsername("");
-    }
+    setUsername("");
+    // Redirect to requests page instead of chat
+    navigate('/requests');
+   }
+
   return (
     <div className='JoinPage relative min-h-screen w-full flex items-center justify-center overflow-hidden'>
       {/* Animated Background */}
@@ -77,7 +82,6 @@ const Join = () => {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && username.trim()) {
                     sendUser();
-                    window.location.href = '/chat';
                   }
                 }}
                 id="username"
@@ -85,25 +89,17 @@ const Join = () => {
               <div className={`absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-xl -z-10 blur-xl transition-opacity duration-300 ${focused ? 'opacity-100' : 'opacity-0'}`}></div>
             </div>
 
-            <Link to={'/chat'} className="block">
-              <button 
-                className="group w-full p-4 text-lg bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none relative overflow-hidden"
-                onClick={(e)=>{
-                  if(!username.trim()){
-                    e.preventDefault();
-                  } else {
-                    sendUser();
-                  }
-                }}
-                disabled={!username.trim()}
-              >
-                <span className="relative z-10 flex items-center justify-center gap-2">
-                  Join Chat
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </span>
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              </button>
-            </Link>
+            <button 
+              className="group w-full p-4 text-lg bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none relative overflow-hidden"
+              onClick={sendUser}
+              disabled={!username.trim()}
+            >
+              <span className="relative z-10 flex items-center justify-center gap-2">
+                Continue
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </span>
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            </button>
           </div>
 
           {/* Decorative Elements */}
