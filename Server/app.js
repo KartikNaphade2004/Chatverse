@@ -42,29 +42,65 @@ app.use(cors({
     credentials: true
 }));
 const port = process.env.PORT || 3000 ; 
-const users=[{}];
+const users = {};
 
 io.on("connection",(socket)=>{
-    console.log(`New connection.`);
+    console.log(`New connection: ${socket.id}`);
 
     socket.on('joined',({user})=>{
         users[socket.id] = user;
         console.log(`${user} has joined`);  
-        socket.broadcast.emit('userJoined',{user:"Admin",message:`${users[socket.id]} has joined `}); 
-        socket.emit('welcome',{user:"Admin",message:`Welcome to the chat ${users[socket.id]}`});
+        
+        // Send welcome message to new user
+        socket.emit('welcome',{
+            user:"Admin",
+            message:`Welcome to ChatVerse, ${users[socket.id]}! Start chatting with others.`,
+            timestamp: new Date().toISOString()
+        }); 
+        
+        // Notify other users
+        socket.broadcast.emit('userJoined',{
+            user:"Admin",
+            message:`${users[socket.id]} has joined the chat`,
+            timestamp: new Date().toISOString()
+        });
+        
+        // Send current user count to all clients
+        const userCount = Object.keys(users).length;
+        io.emit('userCount', userCount);
     });
 
     socket.on('message',({message,id})=>{
-            io.emit('sendMessage',{user : users[id],message,id});
-    })
+        if(users[id] && message){
+            io.emit('sendMessage',{
+                user: users[id],
+                message: message,
+                id: id,
+                timestamp: new Date().toISOString()
+            });
+        }
+    });
 
     socket.on('disconnect',()=>{
-        socket.broadcast.emit('leave',{user:"Admin",message:`${users[socket.id]} User has left`});
-        //console.log(`User :${ users[socket.id]} has left`);
+        const leavingUser = users[socket.id];
+        if(leavingUser){
+            delete users[socket.id];
+            socket.broadcast.emit('leave',{
+                user:"Admin",
+                message:`${leavingUser} has left the chat`,
+                timestamp: new Date().toISOString()
+            });
+            
+            // Update user count
+            const userCount = Object.keys(users).length;
+            io.emit('userCount', userCount);
+            
+            console.log(`${leavingUser} has left`);
+        }
     });
 
     socket.on('leave',(data)=>{
-        console.log(data.user,data.message);
+        console.log(data.user, data.message);
     });
    
 });
