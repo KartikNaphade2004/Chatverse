@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, MessageCircle, ArrowRight, RefreshCw, Plus, Search, TrendingUp, Hash, Sparkles } from 'lucide-react';
+import { Users, MessageCircle, ArrowRight, RefreshCw, Plus, Search, TrendingUp, Hash, Sparkles, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import socketIO from 'socket.io-client';
 
@@ -23,8 +23,9 @@ const RoomList = () => {
         setUsername(user);
 
         const newSocket = socketIO(ENDPOINT, {
-            transports: ['websocket'],
-            reconnection: true
+            transports: ['websocket', 'polling'],
+            reconnection: true,
+            reconnectionDelay: 500
         });
 
         newSocket.on('connect', () => {
@@ -74,6 +75,22 @@ const RoomList = () => {
 
         setFilteredRooms(sorted);
     }, [rooms, sortBy, searchQuery]);
+
+    // Keyboard shortcuts
+    useEffect(() => {
+        const handleKeyPress = (e) => {
+            if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
+                e.preventDefault();
+                document.getElementById('roomSearch')?.focus();
+            } else if (e.key === 'n' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                handleCreateRoom();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyPress);
+        return () => window.removeEventListener('keydown', handleKeyPress);
+    }, []);
 
     const handleEnterRoom = (roomName, isOwner) => {
         if (!username) {
@@ -140,7 +157,7 @@ const RoomList = () => {
                 <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-white/50">
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                         <div>
-                            <h1 className="text-gray-800 text-4xl md:text-5xl font-extrabold mb-2 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                            <h1 className="text-gray-800 text-3xl md:text-4xl font-extrabold mb-1 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
                                 Active Rooms
                             </h1>
                             <p className="text-gray-600 font-medium">Browse and join chat rooms</p>
@@ -149,12 +166,14 @@ const RoomList = () => {
                             <button
                                 onClick={handleRefresh}
                                 className="px-4 py-2.5 bg-white hover:bg-gray-50 rounded-xl text-gray-700 transition-all flex items-center gap-2 border border-gray-200 hover:border-blue-300 hover:shadow-md"
+                                title="Refresh (R)"
                             >
                                 <RefreshCw className="w-4 h-4" />
                             </button>
                             <button
                                 onClick={handleCreateRoom}
                                 className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-xl text-white font-semibold transition-all hover:scale-105 hover:shadow-xl flex items-center gap-2 shadow-lg"
+                                title="Create Room (Ctrl+N)"
                             >
                                 <Plus className="w-4 h-4" />
                                 Create Room
@@ -169,8 +188,9 @@ const RoomList = () => {
                         <div className="flex-1 relative">
                             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                             <input
+                                id="roomSearch"
                                 type="text"
-                                placeholder="Search rooms by name or owner..."
+                                placeholder="Search rooms by name or owner... (Press / to focus)"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="w-full pl-12 pr-4 py-3 bg-gradient-to-r from-gray-50 to-white text-gray-800 placeholder-gray-400 rounded-xl border border-gray-200 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 transition-all shadow-sm"
@@ -201,8 +221,9 @@ const RoomList = () => {
                             return (
                                 <div
                                     key={room.name}
-                                    className="group bg-white/80 backdrop-blur-xl rounded-2xl p-6 border border-white/50 shadow-xl hover:shadow-2xl hover:border-blue-300 transition-all duration-300 transform hover:scale-105 animate-fade-in"
-                                    style={{ animationDelay: `${index * 0.1}s` }}
+                                    className="group bg-white/80 backdrop-blur-xl rounded-2xl p-6 border border-white/50 shadow-xl hover:shadow-2xl hover:border-blue-300 transition-all duration-300 transform hover:scale-105 animate-fade-in cursor-pointer"
+                                    style={{ animationDelay: `${index * 0.05}s` }}
+                                    onClick={() => handleEnterRoom(room.name, isOwner)}
                                 >
                                     <div className="flex items-start gap-4 mb-4">
                                         <div className="relative">
@@ -243,7 +264,10 @@ const RoomList = () => {
                                     </div>
 
                                     <button
-                                        onClick={() => handleEnterRoom(room.name, isOwner)}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleEnterRoom(room.name, isOwner);
+                                        }}
                                         className={`w-full px-4 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-xl flex items-center justify-center gap-2 ${
                                             isOwner
                                                 ? 'bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white shadow-lg'
@@ -285,8 +309,9 @@ const RoomList = () => {
                         {!searchQuery && (
                             <button
                                 onClick={handleCreateRoom}
-                                className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-xl text-white font-semibold transition-all hover:scale-105 shadow-lg"
+                                className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-xl text-white font-semibold transition-all hover:scale-105 shadow-lg flex items-center gap-2 mx-auto"
                             >
+                                <Zap className="w-5 h-5" />
                                 Create Your First Room
                             </button>
                         )}
