@@ -383,7 +383,7 @@ io.on("connection",(socket)=>{
         }
     });
 
-    // Join room (after request accepted)
+    // Join room (after request accepted OR user navigating to chat)
     socket.on('joinRoom', ({user, room})=>{
         if (!room || !user) {
             socket.emit('error', { message: 'Room and user are required' });
@@ -406,33 +406,41 @@ io.on("connection",(socket)=>{
             return;
         }
 
-        // Check if user is allowed in room (by username, not socket.id)
-        // This handles the case where user navigates to chat and gets a new socket connection
+        // Check if user is already in room (by username, not socket.id)
+        // This handles: user was accepted, then navigated to chat with new socket
         const userSocketId = Object.keys(rooms[room].users).find(
             sid => rooms[room].users[sid] === user
         );
 
-        if (!userSocketId) {
-            console.error(`User ${user} not found in room ${room}. Room users:`, rooms[room].users);
-            console.error(`Available users in room:`, Object.values(rooms[room].users));
-            socket.emit('error', { message: 'You are not authorized to join this room. Please request access first.' });
-            return;
-        }
-        
-        console.log(`User ${user} found in room with socket ${userSocketId}, current socket: ${socket.id}`);
-
-        // CRITICAL: ALWAYS update socket ID (user navigated to chat = new socket connection)
-        // This is normal - when user goes to chat page, they get a new socket
-        if (userSocketId !== socket.id) {
-            console.log(`Socket ID changed for ${user}: ${userSocketId} -> ${socket.id} (normal - new chat connection)`);
+        if (userSocketId) {
+            // User is already in room - just update socket ID (normal when navigating to chat)
+            console.log(`User ${user} already in room with socket ${userSocketId}, updating to ${socket.id}`);
+            
             // Remove old socket from room
-            const oldSocket = io.sockets.sockets.get(userSocketId);
-            if (oldSocket) {
-                oldSocket.leave(room);
-                console.log(`Removed old socket ${userSocketId} from room`);
+            if (userSocketId !== socket.id) {
+                const oldSocket = io.sockets.sockets.get(userSocketId);
+                if (oldSocket) {
+                    oldSocket.leave(room);
+                    console.log(`Removed old socket ${userSocketId} from room`);
+                }
+                delete rooms[room].users[userSocketId];
+                delete socketToRoom[userSocketId];
             }
-            delete rooms[room].users[userSocketId];
-            delete socketToRoom[userSocketId];
+        } else {
+            // User NOT in room - check if they have a pending request
+            const hasPendingRequest = rooms[room].joinRequests.some(req => req.user === user);
+            
+            if (hasPendingRequest) {
+                console.log(`User ${user} has pending request but not yet accepted`);
+                socket.emit('error', { message: 'Your request is pending. Please wait for approval.' });
+                return;
+            } else {
+                console.error(`User ${user} not found in room ${room} and no pending request`);
+                console.error(`Room users:`, Object.values(rooms[room].users));
+                console.error(`Pending requests:`, rooms[room].joinRequests.map(r => r.user));
+                socket.emit('error', { message: 'You are not authorized to join this room. Please request access first.' });
+                return;
+            }
         }
         
         // ALWAYS add/update current socket to room
