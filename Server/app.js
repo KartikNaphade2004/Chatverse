@@ -262,12 +262,29 @@ io.on("connection",(socket)=>{
             req => req.user !== requestingUser
         );
 
-        // Add user to room
+        // CRITICAL: Add user to room - use a placeholder socket ID that will be updated when they join chat
+        // The actual socket ID will be updated when they navigate to chat page
+        // For now, we mark them as accepted by storing their username
+        // When they join chat, we'll update with their actual socket ID
+        
+        // Check if user already exists in room (by username)
+        const existingSocketId = Object.keys(rooms[room].users).find(
+            sid => rooms[room].users[sid] === requestingUser
+        );
+        
+        if (existingSocketId) {
+            // User already in room, just update socket ID
+            delete rooms[room].users[existingSocketId];
+            delete socketToRoom[existingSocketId];
+        }
+        
+        // Add user with their current socket ID (from request page)
         rooms[room].users[requestingSocketId] = requestingUser;
         socketToRoom[requestingSocketId] = room;
         
         console.log(`Added ${requestingUser} to room ${room} with socket ${requestingSocketId}`);
         console.log(`Room users now:`, rooms[room].users);
+        console.log(`All users in room by name:`, Object.values(rooms[room].users));
         
         // Make requesting user join the room socket room
         const requestingSocket = io.sockets.sockets.get(requestingSocketId);
@@ -289,6 +306,8 @@ io.on("connection",(socket)=>{
             console.log(`Sent ${otherUsers.length} users to ${requestingUser}:`, otherUsers);
         } else {
             console.error(`ERROR: Socket ${requestingSocketId} not found for user ${requestingUser}`);
+            // Even if socket not found, user is still added to room - they can join with new socket later
+            console.log(`User ${requestingUser} added to room but socket not found - will update on chat join`);
         }
         
         // Notify all other users in room about the new user
