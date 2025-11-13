@@ -414,7 +414,7 @@ io.on("connection",(socket)=>{
 
         if (userSocketId) {
             // User is already in room - just update socket ID (normal when navigating to chat)
-            console.log(`User ${user} already in room with socket ${userSocketId}, updating to ${socket.id}`);
+            console.log(`✓ User ${user} found in room with socket ${userSocketId}, updating to ${socket.id}`);
             
             // Remove old socket from room
             if (userSocketId !== socket.id) {
@@ -435,11 +435,25 @@ io.on("connection",(socket)=>{
                 socket.emit('error', { message: 'Your request is pending. Please wait for approval.' });
                 return;
             } else {
-                console.error(`User ${user} not found in room ${room} and no pending request`);
-                console.error(`Room users:`, Object.values(rooms[room].users));
-                console.error(`Pending requests:`, rooms[room].joinRequests.map(r => r.user));
-                socket.emit('error', { message: 'You are not authorized to join this room. Please request access first.' });
-                return;
+                // CRITICAL: Check if user was auto-accepted as first user
+                // If room is empty or user was first, allow them in
+                const roomUserCount = Object.keys(rooms[room].users).length;
+                const isFirstUser = roomUserCount === 0;
+                
+                if (isFirstUser) {
+                    console.log(`User ${user} is first user - auto-adding to room`);
+                    rooms[room].users[socket.id] = user;
+                    rooms[room].owner = user;
+                    socketToRoom[socket.id] = room;
+                    // Continue to join room below
+                } else {
+                    console.error(`✗ User ${user} not found in room ${room}`);
+                    console.error(`Room users (by name):`, Object.values(rooms[room].users));
+                    console.error(`Room users (by socket):`, rooms[room].users);
+                    console.error(`Pending requests:`, rooms[room].joinRequests.map(r => r.user));
+                    socket.emit('error', { message: 'You are not authorized to join this room. Please request access first.' });
+                    return;
+                }
             }
         }
         

@@ -55,11 +55,21 @@ const Chat = () => {
         });
 
         socket.on('error', (error) => {
-            console.error('Socket error:', error);
-            const errorMsg = error.message || '';
+            const errorMsg = error?.message || JSON.stringify(error) || 'Unknown error';
+            console.error('Socket error:', errorMsg, error);
             
-            // Only redirect if it's a real authorization issue, not a temporary connection issue
-            if (errorMsg.includes('not authorized') && !errorMsg.includes('request access')) {
+            // Log full error object for debugging
+            if (error && typeof error === 'object') {
+                console.error('Error details:', {
+                    message: error.message,
+                    type: error.type,
+                    data: error.data,
+                    full: error
+                });
+            }
+            
+            // Only redirect if it's a real authorization issue
+            if (errorMsg.includes('not authorized') || errorMsg.includes('Please request access')) {
                 console.error('Authorization error, redirecting to request page');
                 navigate('/request');
             } else if (errorMsg.includes('Room does not exist')) {
@@ -67,7 +77,7 @@ const Chat = () => {
                 navigate('/request');
             } else {
                 // Don't redirect for other errors - just log them
-                console.error('Socket error (not redirecting):', error);
+                console.error('Socket error (not redirecting):', errorMsg);
             }
         });
 
