@@ -201,9 +201,15 @@ io.on("connection",(socket)=>{
             // Notify user they're accepted
             socket.emit('joinRequestAccepted', { room });
             
+            // Also send hasAccess so they know they're in room
+            socket.emit('hasAccess', { room });
+            
             // Send empty user list (they're the first one)
             socket.emit('roomUsers', []);
             socket.emit('roomUsersUpdate', []);
+            
+            // Send empty requests list (they're the first one)
+            socket.emit('joinRequests', []);
             
             return;
         }
@@ -218,11 +224,16 @@ io.on("connection",(socket)=>{
         console.log(`${user} requested to join ${room}`);
 
         // Notify all users in room about new request
+        console.log(`Notifying users in ${room} about new request from ${user}`);
+        console.log(`Users in room:`, Object.keys(rooms[room].users));
         io.to(room).emit('newJoinRequest', {
             room: room,
             user: user,
             socketId: socket.id
         });
+        
+        // Also immediately send updated requests list to all users in room
+        io.to(room).emit('joinRequests', rooms[room].joinRequests);
 
         socket.emit('joinRequestSent', { room, user });
     });
@@ -312,27 +323,25 @@ io.on("connection",(socket)=>{
 
     // Get join requests for a room (any user in room can see)
     socket.on('getJoinRequests', ({room})=>{
+        console.log(`getJoinRequests called for room: ${room}, socket: ${socket.id}`);
+        
         if (!rooms[room]) {
+            console.log(`Room ${room} does not exist`);
             socket.emit('joinRequests', []);
             return;
         }
 
-        // Check if user is in room (by username, not just socket.id)
+        // Check if user is in room by socket ID
         const currentUser = rooms[room].users[socket.id];
+        console.log(`Current user check:`, currentUser, `Users in room:`, rooms[room].users);
         
-        // Also check by username in case socket ID changed
-        const userByUsername = Object.entries(rooms[room].users).find(
-            ([sid, username]) => {
-                // Get username from session or check if this socket belongs to a user
-                return sid === socket.id;
-            }
-        );
-        
-        if (currentUser || userByUsername) {
+        if (currentUser) {
             // User is in room, send them the requests
+            console.log(`Sending ${rooms[room].joinRequests.length} requests to ${currentUser}`);
             socket.emit('joinRequests', rooms[room].joinRequests || []);
         } else {
             // If not in room, still send empty array (for request page)
+            console.log(`User not in room, sending empty requests`);
             socket.emit('joinRequests', []);
         }
     });

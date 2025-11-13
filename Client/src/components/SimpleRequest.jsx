@@ -32,14 +32,17 @@ const SimpleRequest = () => {
         });
 
         newSocket.on('connect', () => {
-            console.log('Connected to server');
+            console.log('Connected to server', newSocket.id);
             setIsConnected(true);
             
             // Check if user already has access
             newSocket.emit('checkAccess', { user: currentUser, room: MAIN_ROOM });
             
             // Always try to get pending requests (will return empty if not in room)
-            newSocket.emit('getJoinRequests', { room: MAIN_ROOM });
+            // Add small delay to ensure room state is updated
+            setTimeout(() => {
+                newSocket.emit('getJoinRequests', { room: MAIN_ROOM });
+            }, 500);
         });
 
         newSocket.on('disconnect', () => {
@@ -47,20 +50,28 @@ const SimpleRequest = () => {
         });
 
         newSocket.on('hasAccess', () => {
+            console.log('User has access to room');
             setIsInRoom(true);
-            // If user has access, they should stay on request page to manage requests
-            // Only navigate if they explicitly want to go to chat
-            // Don't auto-navigate - let them see requests first
+            // Refresh requests list when user has access
+            setTimeout(() => {
+                if (newSocket.connected) {
+                    newSocket.emit('getJoinRequests', { room: MAIN_ROOM });
+                }
+            }, 300);
         });
 
         newSocket.on('joinRequests', (requests) => {
-            setJoinRequests(requests);
+            console.log('Received join requests:', requests);
+            setJoinRequests(requests || []);
         });
 
-        newSocket.on('newJoinRequest', () => {
+        newSocket.on('newJoinRequest', (data) => {
+            console.log('New join request received:', data);
             // Refresh requests list when new request comes in
             if (newSocket.connected) {
-                newSocket.emit('getJoinRequests', { room: MAIN_ROOM });
+                setTimeout(() => {
+                    newSocket.emit('getJoinRequests', { room: MAIN_ROOM });
+                }, 200);
             }
         });
 
