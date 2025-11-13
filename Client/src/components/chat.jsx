@@ -33,14 +33,15 @@ const Chat = () => {
         });
 
         socket.on('connect', () => {
-            console.log(`Client connected! Socket ID: ${socket.id}`);
+            console.log(`Client connected! Socket ID: ${socket.id}, User: ${user}, Room: ${room}`);
             setid(socket.id);
             setIsConnected(true);
             
-            // Small delay to ensure socket is fully connected
+            // Ensure socket is fully connected before joining room
             setTimeout(() => {
+                console.log(`Emitting joinRoom for ${user} to ${room}`);
                 socket.emit('joinRoom', { user, room });
-            }, 100);
+            }, 200);
         });
 
         socket.on('disconnect', () => {
@@ -125,12 +126,12 @@ const Chat = () => {
 
     const send = () => {
         const message = messageInput.trim();
-        if (message && socket && socket.connected) {
-            console.log('Sending message:', message, 'socket.id:', socket.id);
+        if (message && socket && socket.connected && id) {
+            console.log('Sending message:', message, 'socket.id:', socket.id, 'user:', user);
             socket.emit('message', { user, message, id: socket.id });
             setMessageInput("");
         } else {
-            console.error('Cannot send message - socket not connected or message empty');
+            console.error('Cannot send message - socket:', !!socket, 'connected:', socket?.connected, 'id:', id, 'message:', message);
         }
     }
 
