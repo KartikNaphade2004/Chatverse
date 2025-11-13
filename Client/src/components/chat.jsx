@@ -6,7 +6,7 @@ import Message from "./Message.jsx";
 import { useNavigate } from 'react-router-dom';
 
 let socket;
-const ENDPOINT = import.meta.env.VITE_SERVER_URL || "https://chatverse-backend-1041.onrender.com";
+const ENDPOINT = import.meta.env.VITE_SERVER_URL || "https://chatverse-backend-01hn.onrender.com";
 
 const Chat = () => {
     const [id, setid] = useState("");

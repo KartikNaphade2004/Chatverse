@@ -10,7 +10,8 @@ const defaultAllowedOrigins = [
     'http://localhost:5173',
     'http://localhost:5174',
     'https://chatverse.vercel.app',
-    'https://chatverse-gjif543m5-kartik-naphades-projects.vercel.app'
+    'https://chatverse-gjif543m5-kartik-naphades-projects.vercel.app',
+    'https://chatverse-3k62u031u-kartik-naphades-projects.vercel.app'
 ];
 
 if (process.env.VERCEL_URL) {

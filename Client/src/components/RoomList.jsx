@@ -3,7 +3,7 @@ import { Users, MessageCircle, ArrowRight, RefreshCw, Plus, Search, TrendingUp, 
 import { useNavigate } from 'react-router-dom';
 import socketIO from 'socket.io-client';
 
-const ENDPOINT = import.meta.env.VITE_SERVER_URL || "https://chatverse-backend-1041.onrender.com";
+const ENDPOINT = import.meta.env.VITE_SERVER_URL || "https://chatverse-backend-01hn.onrender.com";
 
 const RoomList = () => {
     const [rooms, setRooms] = useState([]);

@@ -3,7 +3,7 @@ import { ArrowLeft, Plus, Zap, CheckCircle, AlertCircle, Wifi, WifiOff } from 'l
 import { useNavigate } from 'react-router-dom';
 import socketIO from 'socket.io-client';
 
-const ENDPOINT = import.meta.env.VITE_SERVER_URL || "https://chatverse-backend-1041.onrender.com";
+const ENDPOINT = import.meta.env.VITE_SERVER_URL || "https://chatverse-backend-01hn.onrender.com";
 
 const CreateRoom = () => {
     const [roomName, setRoomName] = useState("");
