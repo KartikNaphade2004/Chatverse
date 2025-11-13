@@ -104,7 +104,7 @@ const Chat = () => {
     useEffect(() => {
         if (!socket) return;
 
-        socket.on('sendMessage', (data) => {
+        const handleMessage = (data) => {
             console.log('Received message:', data);
             setMessages((prevMessages) => [...prevMessages, { 
                 user: data.user, 
@@ -112,12 +112,16 @@ const Chat = () => {
                 id: data.id,
                 timestamp: data.timestamp || new Date().toISOString() 
             }]);
-        });
+        };
+
+        socket.on('sendMessage', handleMessage);
 
         return () => {
-            socket.off('sendMessage');
+            if (socket) {
+                socket.off('sendMessage', handleMessage);
+            }
         };
-    }, []);
+    }, [socket]);
 
     const send = () => {
         const message = messageInput.trim();
