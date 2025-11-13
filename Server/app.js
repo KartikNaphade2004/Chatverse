@@ -339,16 +339,28 @@ io.on("connection",(socket)=>{
             return;
         }
 
-        // Check if user is allowed in room
-        if (!rooms[room].users[socket.id]) {
+        // Check if user is allowed in room (by username, not socket.id)
+        const userSocketId = Object.keys(rooms[room].users).find(
+            sid => rooms[room].users[sid] === user
+        );
+
+        if (!userSocketId) {
             socket.emit('error', { message: 'You are not authorized to join this room' });
             return;
         }
 
-        socket.join(room);
-        console.log(`${user} joined room: ${room}`);
+        // Update socket ID if different (user reconnected)
+        if (userSocketId !== socket.id) {
+            delete rooms[room].users[userSocketId];
+            delete socketToRoom[userSocketId];
+            rooms[room].users[socket.id] = user;
+            socketToRoom[socket.id] = room;
+        }
 
-        // Send room users list
+        socket.join(room);
+        console.log(`${user} joined room: ${room} (socket: ${socket.id})`);
+
+        // Send room users list (excluding current user)
         const roomUsers = Object.values(rooms[room].users).filter(u => u !== user);
         socket.emit('roomUsers', roomUsers);
 
@@ -359,9 +371,10 @@ io.on("connection",(socket)=>{
             timestamp: new Date().toISOString()
         });
 
-        // Send updated room users list
+        // Send updated room users list to all (excluding the joining user)
         const updatedRoomUsers = Object.values(rooms[room].users);
-        io.to(room).emit('roomUsersUpdate', updatedRoomUsers);
+        socket.to(room).emit('roomUsersUpdate', updatedRoomUsers);
+        socket.emit('roomUsersUpdate', updatedRoomUsers.filter(u => u !== user));
     });
 
     // Get room users
