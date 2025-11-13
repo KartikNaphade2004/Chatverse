@@ -34,10 +34,10 @@ const Message = ({user, message, classs, timestamp}) => {
     }
 
     return (
-        <div className={`w-full flex ${isRight ? 'justify-end' : 'justify-start'} my-1 group`}>
-            <div className={`flex items-start gap-3 max-w-[70%] ${isRight ? 'flex-row-reverse' : 'flex-row'}`}>
+        <div className={`w-full flex ${isRight ? 'justify-end' : 'justify-start'} my-2 group animate-fade-in`}>
+            <div className={`flex items-start gap-3 max-w-[70%] ${isRight ? 'flex-row-reverse' : 'flex-row'} hover-lift`}>
                 {/* User Avatar */}
-                <div className={`${getUserColor(user)} w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold text-sm flex-shrink-0`}>
+                <div className={`${getUserColor(user)} w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold text-base flex-shrink-0 shadow-lg transform transition-transform group-hover:scale-110`}>
                     {userInitial}
                 </div>
                 
@@ -49,16 +49,16 @@ const Message = ({user, message, classs, timestamp}) => {
                             <span className="text-xs text-gray-500">{formatTime(timestamp)}</span>
                         </div>
                     )}
-                    <div className={`px-4 py-2 rounded-lg ${
+                    <div className={`px-5 py-3 rounded-2xl transition-all duration-300 ${
                         isRight 
-                            ? 'bg-blue-500 text-white' 
-                            : 'bg-white text-gray-800 border border-gray-200'
-                    } shadow-sm`}>
+                            ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg hover:shadow-xl' 
+                            : 'bg-white text-gray-800 border-2 border-gray-200 shadow-md hover:shadow-lg hover:border-blue-300'
+                    }`}>
                         <div className="text-sm break-words leading-relaxed">
                             {message}
                         </div>
                         {isRight && timestamp && (
-                            <div className="text-xs mt-1 text-blue-100 text-right">
+                            <div className="text-xs mt-1 text-blue-100 text-right opacity-80">
                                 {formatTime(timestamp)}
                             </div>
                         )}

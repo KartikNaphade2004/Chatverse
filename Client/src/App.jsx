@@ -3,9 +3,7 @@ import './App.css'
 import {BrowserRouter as Router , Route , Routes } from "react-router-dom"
 import Join from './components/Join/Join.jsx'
 import Chat from './components/chat.jsx'
-import Requests from './components/Requests.jsx'
-import RoomList from './components/RoomList.jsx'
-import CreateRoom from './components/CreateRoom.jsx'
+import SimpleRequest from './components/SimpleRequest.jsx'
 
 const App = () => {
   return (
@@ -13,9 +11,7 @@ const App = () => {
       <Router>
         <Routes>
           <Route path="/" element={<Join/>}/>
-          <Route path="/rooms" element={<RoomList/>}/>
-          <Route path="/create-room" element={<CreateRoom/>}/>
-          <Route path="/requests" element={<Requests/>}/>
+          <Route path="/request" element={<SimpleRequest/>}/>
           <Route path="/chat" element={<Chat/>}/>
         </Routes>
       </Router>

@@ -12,7 +12,7 @@ const Join = () => {
    const handleContinue = () => {
     if (username.trim()) {
       sessionStorage.setItem("user", username.trim());
-      navigate('/rooms');
+      navigate('/request');
     }
    }
 

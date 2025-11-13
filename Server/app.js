@@ -85,8 +85,42 @@ const getActiveRooms = () => {
     }));
 };
 
+// Initialize main room if it doesn't exist
+const MAIN_ROOM = "Main Chat Room";
+if (!rooms[MAIN_ROOM]) {
+    rooms[MAIN_ROOM] = {
+        owner: "System",
+        users: {},
+        joinRequests: []
+    };
+}
+
 io.on("connection",(socket)=>{
     console.log(`New connection: ${socket.id}`);
+
+    // Check if user has access to a room
+    socket.on('checkAccess', ({user, room}) => {
+        if (!room || !user) {
+            socket.emit('error', { message: 'Room and user are required' });
+            return;
+        }
+
+        if (!rooms[room]) {
+            socket.emit('noAccess', {});
+            return;
+        }
+
+        // Check if user is already in room
+        const userInRoom = Object.entries(rooms[room].users).find(
+            ([socketId, username]) => username === user
+        );
+
+        if (userInRoom) {
+            socket.emit('hasAccess', { room });
+        } else {
+            socket.emit('noAccess', {});
+        }
+    });
 
     // Create a room
     socket.on('createRoom', ({user, room})=>{
@@ -130,6 +164,15 @@ io.on("connection",(socket)=>{
         if (!room || !user) {
             socket.emit('error', { message: 'Room and user are required' });
             return;
+        }
+
+        // Auto-create main room if it doesn't exist
+        if (room === MAIN_ROOM && !rooms[room]) {
+            rooms[room] = {
+                owner: user, // First requester becomes owner
+                users: {},
+                joinRequests: []
+            };
         }
 
         if (!rooms[room]) {
@@ -176,10 +219,10 @@ io.on("connection",(socket)=>{
             return;
         }
 
-        // Check if current user is room owner
-        const isOwner = rooms[room].users[socket.id] === rooms[room].owner;
-        if (!isOwner) {
-            socket.emit('error', { message: 'Only room owner can accept requests' });
+        // Allow any user in the room to accept requests (simplified)
+        const currentUser = rooms[room].users[socket.id];
+        if (!currentUser) {
+            socket.emit('error', { message: 'You must be in the room to accept requests' });
             return;
         }
 
@@ -216,10 +259,10 @@ io.on("connection",(socket)=>{
             return;
         }
 
-        // Check if current user is room owner
-        const isOwner = rooms[room].users[socket.id] === rooms[room].owner;
-        if (!isOwner) {
-            socket.emit('error', { message: 'Only room owner can reject requests' });
+        // Allow any user in the room to reject requests (simplified)
+        const currentUser = rooms[room].users[socket.id];
+        if (!currentUser) {
+            socket.emit('error', { message: 'You must be in the room to reject requests' });
             return;
         }
 
@@ -237,21 +280,21 @@ io.on("connection",(socket)=>{
         console.log(`Join request from ${requestingUser} rejected for ${room}`);
     });
 
-    // Get join requests for a room (room owner only)
+    // Get join requests for a room (any user in room can see)
     socket.on('getJoinRequests', ({room})=>{
         if (!rooms[room]) {
             socket.emit('error', { message: 'Room does not exist' });
             return;
         }
 
-        // Check if current user is room owner
-        const isOwner = rooms[room].users[socket.id] === rooms[room].owner;
-        if (!isOwner) {
-            socket.emit('error', { message: 'Only room owner can view requests' });
-            return;
+        // Allow any user in the room to see requests
+        const currentUser = rooms[room].users[socket.id];
+        if (currentUser) {
+            socket.emit('joinRequests', rooms[room].joinRequests);
+        } else {
+            // If not in room, still send empty array (for request page)
+            socket.emit('joinRequests', []);
         }
-
-        socket.emit('joinRequests', rooms[room].joinRequests);
     });
 
     // Join room (after request accepted)
