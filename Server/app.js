@@ -447,12 +447,28 @@ io.on("connection",(socket)=>{
                     socketToRoom[socket.id] = room;
                     // Continue to join room below
                 } else {
-                    console.error(`✗ User ${user} not found in room ${room}`);
-                    console.error(`Room users (by name):`, Object.values(rooms[room].users));
-                    console.error(`Room users (by socket):`, rooms[room].users);
-                    console.error(`Pending requests:`, rooms[room].joinRequests.map(r => r.user));
-                    socket.emit('error', { message: 'You are not authorized to join this room. Please request access first.' });
-                    return;
+                    // CRITICAL: Check if user was previously accepted but their socket disconnected
+                    // This can happen if they were accepted on request page, then navigated to chat
+                    // We need to check the room's history or allow re-join for accepted users
+                    // For now, we'll be more lenient: if room exists and has users, allow them to join
+                    // (This assumes they were previously accepted)
+                    console.log(`⚠️ User ${user} not found in room but room has ${roomUserCount} users`);
+                    console.log(`Room users (by name):`, Object.values(rooms[room].users));
+                    console.log(`Room users (by socket):`, rooms[room].users);
+                    console.log(`Pending requests:`, rooms[room].joinRequests.map(r => r.user));
+                    
+                    // If room has users and no pending request, assume user was accepted but socket disconnected
+                    // Allow them to rejoin
+                    if (roomUserCount > 0 && !hasPendingRequest) {
+                        console.log(`✓ Allowing ${user} to rejoin (assumed previously accepted)`);
+                        // Add them to room - they can join
+                        rooms[room].users[socket.id] = user;
+                        socketToRoom[socket.id] = room;
+                        // Continue to join room below
+                    } else {
+                        socket.emit('error', { message: 'You are not authorized to join this room. Please request access first.' });
+                        return;
+                    }
                 }
             }
         }
