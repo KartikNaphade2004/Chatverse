@@ -596,22 +596,40 @@ io.on("connection",(socket)=>{
             const leavingUser = rooms[room].users[socket.id];
             const isOwner = leavingUser === rooms[room].owner;
             
+            // CRITICAL: For MAIN_ROOM, check if user has other active sockets
+            // If they're navigating to chat, they might reconnect immediately
+            // Don't notify others until we're sure they're gone
+            let userStillInRoom = false;
+            if (room === MAIN_ROOM) {
+                // Check if user has other sockets in the room (same username, different socket ID)
+                userStillInRoom = Object.entries(rooms[room].users).some(
+                    ([sid, username]) => username === leavingUser && sid !== socket.id
+                );
+                
+                if (userStillInRoom) {
+                    // User has another socket - just remove this one, don't notify
+                    console.log(`${leavingUser} disconnected socket ${socket.id} but has other sockets - keeping user in room`);
+                }
+            }
+            
             delete rooms[room].users[socket.id];
             delete socketToRoom[socket.id];
             
             // CRITICAL: Never delete MAIN_ROOM, always keep it alive
             if (room === MAIN_ROOM) {
-                // For main room, just remove user but keep room
-                // Notify others in the room
-                socket.to(room).emit('userLeftRoom', {
-                    user: leavingUser,
-                    room: room,
-                    timestamp: new Date().toISOString()
-                });
+                // For main room, only notify if user actually left (no other sockets)
+                if (!userStillInRoom) {
+                    // Notify others in the room
+                    socket.to(room).emit('userLeftRoom', {
+                        user: leavingUser,
+                        room: room,
+                        timestamp: new Date().toISOString()
+                    });
 
-                // Send updated room users list
-                const updatedRoomUsers = Object.values(rooms[room].users);
-                io.to(room).emit('roomUsersUpdate', updatedRoomUsers);
+                    // Send updated room users list
+                    const updatedRoomUsers = Object.values(rooms[room].users);
+                    io.to(room).emit('roomUsersUpdate', updatedRoomUsers);
+                }
                 
                 // If owner left, assign new owner (first remaining user)
                 if (isOwner && Object.keys(rooms[room].users).length > 0) {
