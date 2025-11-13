@@ -313,14 +313,24 @@ io.on("connection",(socket)=>{
     // Get join requests for a room (any user in room can see)
     socket.on('getJoinRequests', ({room})=>{
         if (!rooms[room]) {
-            socket.emit('error', { message: 'Room does not exist' });
+            socket.emit('joinRequests', []);
             return;
         }
 
-        // Allow any user in the room to see requests
+        // Check if user is in room (by username, not just socket.id)
         const currentUser = rooms[room].users[socket.id];
-        if (currentUser) {
-            socket.emit('joinRequests', rooms[room].joinRequests);
+        
+        // Also check by username in case socket ID changed
+        const userByUsername = Object.entries(rooms[room].users).find(
+            ([sid, username]) => {
+                // Get username from session or check if this socket belongs to a user
+                return sid === socket.id;
+            }
+        );
+        
+        if (currentUser || userByUsername) {
+            // User is in room, send them the requests
+            socket.emit('joinRequests', rooms[room].joinRequests || []);
         } else {
             // If not in room, still send empty array (for request page)
             socket.emit('joinRequests', []);

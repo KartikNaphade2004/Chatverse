@@ -38,7 +38,7 @@ const SimpleRequest = () => {
             // Check if user already has access
             newSocket.emit('checkAccess', { user: currentUser, room: MAIN_ROOM });
             
-            // Get pending requests if user is admin
+            // Always try to get pending requests (will return empty if not in room)
             newSocket.emit('getJoinRequests', { room: MAIN_ROOM });
         });
 
@@ -47,9 +47,10 @@ const SimpleRequest = () => {
         });
 
         newSocket.on('hasAccess', () => {
-            setIsAccepted(true);
             setIsInRoom(true);
-            setTimeout(() => navigate('/chat'), 1000);
+            // If user has access, they should stay on request page to manage requests
+            // Only navigate if they explicitly want to go to chat
+            // Don't auto-navigate - let them see requests first
         });
 
         newSocket.on('joinRequests', (requests) => {
@@ -57,7 +58,10 @@ const SimpleRequest = () => {
         });
 
         newSocket.on('newJoinRequest', () => {
-            newSocket.emit('getJoinRequests', { room: MAIN_ROOM });
+            // Refresh requests list when new request comes in
+            if (newSocket.connected) {
+                newSocket.emit('getJoinRequests', { room: MAIN_ROOM });
+            }
         });
 
         newSocket.on('joinRequestSent', () => {
@@ -67,6 +71,7 @@ const SimpleRequest = () => {
 
         newSocket.on('joinRequestAccepted', () => {
             setIsAccepted(true);
+            setIsInRoom(true);
             showToast('Request accepted! Redirecting...', 'success');
             setTimeout(() => navigate('/chat'), 1500);
         });
@@ -128,8 +133,10 @@ const SimpleRequest = () => {
     }, [socket, showToast]);
     
     const canManageRequests = useMemo(() => {
-        return isInRoom && joinRequests.length > 0;
-    }, [isInRoom, joinRequests.length]);
+        // User can manage requests if they're in room AND there are requests
+        // Also show if in room even with 0 requests (to show "No pending requests" message)
+        return isInRoom;
+    }, [isInRoom]);
 
     if (isAccepted) {
         return (
@@ -219,6 +226,13 @@ const SimpleRequest = () => {
                             <Users className="w-6 h-6 text-blue-500" />
                             Pending Requests ({joinRequests.length})
                         </h2>
+                        {joinRequests.length === 0 ? (
+                            <div className="text-center py-8 text-gray-500">
+                                <MessageCircle className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                                <p className="text-lg font-semibold">No pending requests</p>
+                                <p className="text-sm">Waiting for users to request access...</p>
+                            </div>
+                        ) : (
                         <div className="space-y-4">
                             {joinRequests.map((request, index) => (
                                 <div
@@ -253,6 +267,16 @@ const SimpleRequest = () => {
                                     </div>
                                 </div>
                             ))}
+                        </div>
+                        )}
+                        <div className="mt-6 pt-6 border-t border-gray-200">
+                            <button
+                                onClick={() => navigate('/chat')}
+                                className="w-full px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-xl flex items-center justify-center gap-2 shadow-lg"
+                            >
+                                <MessageCircle className="w-5 h-5" />
+                                Go to Chat Room
+                            </button>
                         </div>
                     </div>
                 )}
