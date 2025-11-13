@@ -196,9 +196,10 @@ io.on("connection",(socket)=>{
             socketToRoom[socket.id] = room;
             socket.join(room);
             
-            console.log(`${user} auto-joined ${room} (first user)`);
+            console.log(`${user} auto-joined ${room} (first user), socket: ${socket.id}`);
+            console.log(`Room users after join:`, rooms[room].users);
             
-            // Notify user they're accepted
+            // Notify user they're accepted (but don't navigate - let them see requests)
             socket.emit('joinRequestAccepted', { room });
             
             // Also send hasAccess so they know they're in room
@@ -215,25 +216,29 @@ io.on("connection",(socket)=>{
         }
 
         // Room has users - add to join requests
-        rooms[room].joinRequests.push({
+        const newRequest = {
             user: user,
             socketId: socket.id,
             timestamp: new Date().toISOString()
-        });
+        };
+        rooms[room].joinRequests.push(newRequest);
 
         console.log(`${user} requested to join ${room}`);
+        console.log(`Current requests in room:`, rooms[room].joinRequests);
+        console.log(`Users in room (socket IDs):`, Object.keys(rooms[room].users));
+        console.log(`Room socket members:`, Array.from(io.sockets.adapter.rooms.get(room) || []));
 
         // Notify all users in room about new request
-        console.log(`Notifying users in ${room} about new request from ${user}`);
-        console.log(`Users in room:`, Object.keys(rooms[room].users));
         io.to(room).emit('newJoinRequest', {
             room: room,
             user: user,
             socketId: socket.id
         });
         
-        // Also immediately send updated requests list to all users in room
-        io.to(room).emit('joinRequests', rooms[room].joinRequests);
+        // CRITICAL: Immediately send updated requests list to ALL users in room
+        const requestsToSend = rooms[room].joinRequests;
+        console.log(`Broadcasting ${requestsToSend.length} requests to room ${room}`);
+        io.to(room).emit('joinRequests', requestsToSend);
 
         socket.emit('joinRequestSent', { room, user });
     });

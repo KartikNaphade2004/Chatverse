@@ -81,10 +81,9 @@ const SimpleRequest = () => {
         });
 
         newSocket.on('joinRequestAccepted', () => {
-            setIsAccepted(true);
             setIsInRoom(true);
-            showToast('Request accepted! Redirecting...', 'success');
-            setTimeout(() => navigate('/chat'), 1500);
+            // Don't auto-navigate - let user stay to see requests or manually go to chat
+            showToast('You are now in the room!', 'success');
         });
 
         newSocket.on('joinRequestRejected', () => {
@@ -149,19 +148,7 @@ const SimpleRequest = () => {
         return isInRoom;
     }, [isInRoom]);
 
-    if (isAccepted) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-50">
-                <div className="text-center space-y-4 animate-fade-in">
-                    <div className="w-20 h-20 mx-auto bg-green-500 rounded-full flex items-center justify-center animate-bounce">
-                        <Check className="w-10 h-10 text-white" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-green-700">Request Accepted!</h2>
-                    <p className="text-gray-600">Redirecting to chat...</p>
-                </div>
-            </div>
-        );
-    }
+    // Remove auto-navigation - let user stay on page to manage requests
 
     return (
         <>
@@ -210,22 +197,32 @@ const SimpleRequest = () => {
                     </div>
 
                     {/* Request Button or Status */}
-                    {!hasRequested ? (
-                        <button
-                            onClick={handleRequestJoin}
-                            disabled={!isConnected}
-                            className="w-full p-4 text-lg bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 text-white rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg"
-                        >
-                            <UserPlus className="w-5 h-5" />
-                            Request to Join
-                        </button>
-                    ) : (
-                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 text-blue-700 px-6 py-4 rounded-xl text-center animate-fade-in">
-                            <div className="flex items-center justify-center gap-2 mb-2">
-                                <Clock className="w-5 h-5 animate-pulse" />
-                                <span className="font-semibold">Request Sent!</span>
+                    {!isInRoom ? (
+                        !hasRequested ? (
+                            <button
+                                onClick={handleRequestJoin}
+                                disabled={!isConnected}
+                                className="w-full p-4 text-lg bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 text-white rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg"
+                            >
+                                <UserPlus className="w-5 h-5" />
+                                Request to Join
+                            </button>
+                        ) : (
+                            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 text-blue-700 px-6 py-4 rounded-xl text-center animate-fade-in">
+                                <div className="flex items-center justify-center gap-2 mb-2">
+                                    <Clock className="w-5 h-5 animate-pulse" />
+                                    <span className="font-semibold">Request Sent!</span>
+                                </div>
+                                <p className="text-sm">Waiting for approval from room members...</p>
                             </div>
-                            <p className="text-sm">Waiting for approval from room members...</p>
+                        )
+                    ) : (
+                        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 text-green-700 px-6 py-4 rounded-xl text-center animate-fade-in">
+                            <div className="flex items-center justify-center gap-2 mb-2">
+                                <CheckCircle2 className="w-5 h-5" />
+                                <span className="font-semibold">You're in the room!</span>
+                            </div>
+                            <p className="text-sm">You can manage requests below or go to chat</p>
                         </div>
                     )}
                 </div>
