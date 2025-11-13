@@ -362,7 +362,18 @@ io.on("connection",(socket)=>{
             return;
         }
 
+        // CRITICAL: Auto-create MAIN_ROOM if it doesn't exist
+        if (room === MAIN_ROOM && !rooms[room]) {
+            console.log(`Auto-creating ${MAIN_ROOM} as it doesn't exist`);
+            rooms[room] = {
+                owner: user,
+                users: {},
+                joinRequests: []
+            };
+        }
+
         if (!rooms[room]) {
+            console.error(`Room ${room} does not exist and cannot be created`);
             socket.emit('error', { message: 'Room does not exist' });
             return;
         }
@@ -395,10 +406,20 @@ io.on("connection",(socket)=>{
         // CRITICAL: Join the socket room
         socket.join(room);
         
+        // Verify socket is in room
+        const roomSockets = Array.from(io.sockets.adapter.rooms.get(room) || []);
+        const isInRoom = roomSockets.includes(socket.id);
+        
         console.log(`${user} joined room: ${room} (socket: ${socket.id})`);
         console.log(`Room users:`, rooms[room].users);
-        const roomSockets = Array.from(io.sockets.adapter.rooms.get(room) || []);
         console.log(`Socket rooms (${roomSockets.length} sockets):`, roomSockets);
+        console.log(`Socket ${socket.id} is in room: ${isInRoom}`);
+        
+        if (!isInRoom) {
+            console.error(`WARNING: Socket ${socket.id} failed to join room ${room}`);
+            // Try again
+            socket.join(room);
+        }
 
         // Send room users list (excluding current user)
         const roomUsers = Object.values(rooms[room].users).filter(u => u !== user);
@@ -472,34 +493,57 @@ io.on("connection",(socket)=>{
             delete rooms[room].users[socket.id];
             delete socketToRoom[socket.id];
             
-            // If owner leaves, delete room
-            if (isOwner) {
-                // Notify all users in room
-                io.to(room).emit('roomDeleted', { room });
-                delete rooms[room];
-                // Broadcast updated room list
-                io.emit('activeRooms', getActiveRooms());
-                console.log(`Room ${room} deleted by owner`);
-            } else {
-                // If room is empty, delete it
-                if (Object.keys(rooms[room].users).length === 0) {
-                    delete rooms[room];
-                    io.emit('activeRooms', getActiveRooms());
-                } else {
-                    // Notify others in the room
-                    socket.to(room).emit('userLeftRoom', {
-                        user: leavingUser,
-                        room: room,
-                        timestamp: new Date().toISOString()
-                    });
+            // CRITICAL: Never delete MAIN_ROOM, always keep it alive
+            if (room === MAIN_ROOM) {
+                // For main room, just remove user but keep room
+                // Notify others in the room
+                socket.to(room).emit('userLeftRoom', {
+                    user: leavingUser,
+                    room: room,
+                    timestamp: new Date().toISOString()
+                });
 
-                    // Send updated room users list
-                    const updatedRoomUsers = Object.values(rooms[room].users);
-                    io.to(room).emit('roomUsersUpdate', updatedRoomUsers);
+                // Send updated room users list
+                const updatedRoomUsers = Object.values(rooms[room].users);
+                io.to(room).emit('roomUsersUpdate', updatedRoomUsers);
+                
+                // If owner left, assign new owner (first remaining user)
+                if (isOwner && Object.keys(rooms[room].users).length > 0) {
+                    const newOwner = Object.values(rooms[room].users)[0];
+                    rooms[room].owner = newOwner;
+                    console.log(`New owner for ${room}: ${newOwner}`);
                 }
+                
+                console.log(`${leavingUser} left ${room} (main room - kept alive)`);
+            } else {
+                // For other rooms, delete if owner leaves
+                if (isOwner) {
+                    // Notify all users in room
+                    io.to(room).emit('roomDeleted', { room });
+                    delete rooms[room];
+                    // Broadcast updated room list
+                    io.emit('activeRooms', getActiveRooms());
+                    console.log(`Room ${room} deleted by owner`);
+                } else {
+                    // If room is empty, delete it
+                    if (Object.keys(rooms[room].users).length === 0) {
+                        delete rooms[room];
+                        io.emit('activeRooms', getActiveRooms());
+                    } else {
+                        // Notify others in the room
+                        socket.to(room).emit('userLeftRoom', {
+                            user: leavingUser,
+                            room: room,
+                            timestamp: new Date().toISOString()
+                        });
+
+                        // Send updated room users list
+                        const updatedRoomUsers = Object.values(rooms[room].users);
+                        io.to(room).emit('roomUsersUpdate', updatedRoomUsers);
+                    }
+                }
+                console.log(`${leavingUser} left room: ${room}`);
             }
-            
-            console.log(`${leavingUser} left room: ${room}`);
         }
     });
 });
