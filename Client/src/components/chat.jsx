@@ -126,11 +126,7 @@ const Chat = () => {
     };
 
     const handleBackToRooms = () => {
-        if (isRoomOwner) {
-            navigate("/requests");
-        } else {
-            navigate("/rooms");
-        }
+        navigate("/request");
     };
 
     return (
