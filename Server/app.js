@@ -11,6 +11,7 @@ const defaultAllowedOrigins = [
     'http://localhost:5174',
     'https://chatverse.vercel.app',
     'https://chatverse-client.vercel.app',
+    'https://chatverse-client-6n6eqbp69-kartik-naphades-projects.vercel.app',
     'https://chatverse-gjif543m5-kartik-naphades-projects.vercel.app',
     'https://chatverse-3k62u031u-kartik-naphades-projects.vercel.app'
 ];
