@@ -187,7 +187,28 @@ io.on("connection",(socket)=>{
             return;
         }
 
-        // Add join request
+        // SIMPLE LOGIC: If room is empty, auto-accept first user
+        const roomUserCount = Object.keys(rooms[room].users).length;
+        if (roomUserCount === 0) {
+            // Auto-accept - room is empty, first user gets in automatically
+            rooms[room].users[socket.id] = user;
+            rooms[room].owner = user; // First user becomes owner
+            socketToRoom[socket.id] = room;
+            socket.join(room);
+            
+            console.log(`${user} auto-joined ${room} (first user)`);
+            
+            // Notify user they're accepted
+            socket.emit('joinRequestAccepted', { room });
+            
+            // Send updated room users list
+            const roomUsers = Object.values(rooms[room].users);
+            io.to(room).emit('roomUsersUpdate', roomUsers);
+            
+            return;
+        }
+
+        // Room has users - add to join requests
         rooms[room].joinRequests.push({
             user: user,
             socketId: socket.id,
@@ -196,18 +217,12 @@ io.on("connection",(socket)=>{
 
         console.log(`${user} requested to join ${room}`);
 
-        // Notify room owner
-        const ownerSocketId = Object.keys(rooms[room].users).find(
-            sid => rooms[room].users[sid] === rooms[room].owner
-        );
-        
-        if (ownerSocketId) {
-            io.to(ownerSocketId).emit('newJoinRequest', {
-                room: room,
-                user: user,
-                socketId: socket.id
-            });
-        }
+        // Notify all users in room about new request
+        io.to(room).emit('newJoinRequest', {
+            room: room,
+            user: user,
+            socketId: socket.id
+        });
 
         socket.emit('joinRequestSent', { room, user });
     });
@@ -235,7 +250,13 @@ io.on("connection",(socket)=>{
         rooms[room].users[requestingSocketId] = requestingUser;
         socketToRoom[requestingSocketId] = room;
         
-        // Make requesting user join the room
+        // Make requesting user join the room socket room
+        const requestingSocket = io.sockets.sockets.get(requestingSocketId);
+        if (requestingSocket) {
+            requestingSocket.join(room);
+        }
+        
+        // Notify requesting user they're accepted
         io.to(requestingSocketId).emit('joinRequestAccepted', { room });
         
         // Notify all users in room
