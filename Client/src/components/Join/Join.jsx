@@ -17,50 +17,59 @@ const Join = () => {
    }
 
   return (
-    <div className='JoinPage space-scene relative min-h-screen w-full flex items-center justify-center overflow-hidden px-6 py-12 text-white'>
-      <div className="among-overlay"></div>
-      <div className="floating-ship hidden md:block"></div>
+    <div className='JoinPage relative min-h-screen w-full flex items-center justify-center overflow-hidden'>
+      {/* Animated Gradient Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiM2MzY2RjEiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-40"></div>
+      </div>
+
+      {/* Floating Orbs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob"></div>
+        <div className="absolute top-40 right-10 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000"></div>
+        <div className="absolute -bottom-8 left-1/2 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-4000"></div>
+      </div>
 
       {/* Main Content */}
-      <div className="relative z-10 w-full max-w-xl mx-auto animate-fade-in">
-        <div className="crew-card px-10 py-12 md:px-12 md:py-14">
+      <div className="relative z-10 w-full max-w-md mx-auto px-6 animate-fade-in">
+        <div className="JoinContainer bg-white/80 backdrop-blur-xl rounded-3xl p-10 shadow-2xl border border-white/50">
           {/* Logo and Title */}
-          <div className='text-center mb-10 space-y-5 relative z-10'>
-            <div className='flex items-center justify-center mb-4'>
+          <div className='text-center mb-10 space-y-4'>
+            <div className='flex items-center justify-center mb-6'>
               <div className="relative">
-                <div className="absolute inset-0 blur-3xl opacity-60 bg-[conic-gradient(from_180deg_at_50%_50%,rgba(255,77,109,0.55),rgba(0,194,255,0.4),rgba(123,92,255,0.6),rgba(255,77,109,0.55))] animate-pulse"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full blur-2xl opacity-50 animate-pulse"></div>
                 <img 
                   src={logo} 
-                  className='w-28 h-28 md:w-32 md:h-32 relative z-10 drop-shadow-[0_20px_45px_rgba(0,194,255,0.45)] animate-float-slow' 
+                  className='w-28 h-28 md:w-32 md:h-32 relative z-10 drop-shadow-2xl animate-float-slow' 
                   alt="ChatVerse Logo"
                 />
               </div>
             </div>
-            <span className="crew-tag inline-flex items-center gap-2 justify-center">
-              <Sparkles className="w-4 h-4 text-yellow-300" />
-              Crew Lobby Console
-            </span>
-            <h1 className='text-5xl md:text-6xl font-black tracking-tight'>
-              Welcome, Crewmate!
+            <h1 className='text-6xl md:text-7xl font-extrabold mb-2 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent'>
+              Chat Verse
             </h1>
-            <p className="text-base md:text-lg text-[var(--sus-text-secondary)] max-w-sm mx-auto leading-relaxed">
-              Suit up, enter your codename, and dock into the <span className="text-white font-semibold">ChatVerse starship</span>. Every room is a new mission—no impostors allowed!
-            </p>
+            <div className="flex items-center justify-center gap-2 text-gray-600 text-sm font-medium">
+              <Sparkles className="w-4 h-4 text-yellow-500 animate-pulse" />
+              <span>Real-Time Chat Experience</span>
+              <Zap className="w-4 h-4 text-blue-500" />
+            </div>
           </div>
 
           {/* Join Form */}
-          <div className='space-y-6 relative z-10'>
-            <div className='relative space-y-3'>
-              <label className="block text-sm uppercase tracking-[0.22em] text-[var(--sus-text-secondary)] font-semibold">
-                Crew Codename
+          <div className='space-y-6'>
+            <div className='relative'>
+              <label className="block text-gray-700 text-sm font-semibold mb-2 ml-1">
+                Enter Your Name
               </label>
-              <div className="relative group">
+              <div className="relative">
                 <input
                   type="text"
-                  className={`sus-input w-full p-4 pl-5 text-lg rounded-2xl transition-all duration-300 ${
-                    focused ? 'shadow-[0_0_0_3px_rgba(0,194,255,0.25)] scale-[1.01]' : ''
+                  className={`w-full p-4 pl-5 text-lg bg-gradient-to-r from-gray-50 to-white text-gray-800 placeholder-gray-400 rounded-xl outline-none border-2 transition-all duration-300 shadow-sm ${
+                    focused
+                      ? 'border-blue-500 shadow-lg shadow-blue-500/30 scale-[1.01]' 
+                      : 'border-gray-200 hover:border-blue-300'
                   }`}
-                  placeholder="e.g. RedSus, AstroKate, LunarWolf"
+                  placeholder="Your name"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   onFocus={() => setFocused(true)}
@@ -72,41 +81,37 @@ const Join = () => {
                   }}
                   id="username"
                 />
-                <div className="absolute -top-3 right-5">
-                  <span className="crew-visor text-xs">
-                    Press Enter
-                  </span>
-                </div>
+                {focused && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-xl -z-10 blur-xl"></div>
+                )}
               </div>
             </div>
 
             <button 
-              className="sus-button group relative w-full py-4 text-base rounded-2xl tracking-[0.18em] flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="group relative w-full p-4 text-lg bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white rounded-xl font-semibold transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none overflow-hidden"
               onClick={handleContinue}
               disabled={!username.trim()}
             >
-              Initiate Launch
-              <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+              <span className="relative z-10 flex items-center justify-center gap-2">
+                Continue
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </span>
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             </button>
           </div>
 
-          <div className="sus-divider"></div>
-
-          {/* Experience Callout */}
-          <div className="relative z-10 text-[var(--sus-text-secondary)] text-sm leading-relaxed text-center">
-            <div className="flex items-center justify-center gap-2 mb-3">
-              <Zap className="w-4 h-4 text-[#ffb703]" />
-              <span className="uppercase tracking-[0.24em] text-xs">Mission Briefing</span>
-              <Sparkles className="w-4 h-4 text-[#8ecae6]" />
-            </div>
-            <p>
-              Squad up with your crew, open secret channels, and broadcast across the galaxy in real time. Your visor is clear, captain!
-            </p>
+          {/* Decorative Elements */}
+          <div className="mt-8 flex items-center justify-center gap-2 text-gray-400 text-xs">
+            <div className="h-px w-16 bg-gradient-to-r from-transparent to-gray-300"></div>
+            <span className="font-medium">Secure & Fast</span>
+            <div className="h-px w-16 bg-gradient-to-l from-transparent to-gray-300"></div>
           </div>
 
           {/* Made by Credit */}
-          <div className="mt-10 text-center text-xs text-[var(--sus-text-secondary)] tracking-[0.2em] uppercase">
-            Crafted by <span className="text-white font-semibold tracking-[0.25em]">Kartik Naphade</span>
+          <div className="mt-6 text-center">
+            <p className="text-gray-400 text-xs">
+              Made with <span className="text-red-500">❤️</span> by <span className="text-blue-600 font-semibold">Kartik Naphade</span>
+            </p>
           </div>
         </div>
       </div>
