@@ -10,6 +10,7 @@ const defaultAllowedOrigins = [
     'http://localhost:5173',
     'http://localhost:5174',
     'https://chatverse.vercel.app',
+    'https://chatverse-client.vercel.app',
     'https://chatverse-gjif543m5-kartik-naphades-projects.vercel.app',
     'https://chatverse-3k62u031u-kartik-naphades-projects.vercel.app'
 ];
@@ -24,7 +25,8 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
 
 const isOriginAllowed = (origin) => {
     if (!origin) {
-        return process.env.NODE_ENV !== 'production';
+        // Allow server-to-server or health-check requests with no origin
+        return true;
     }
 
     if (allowedOrigins.includes(origin)) {
@@ -43,29 +45,26 @@ const isOriginAllowed = (origin) => {
     return false;
 };
 
+const corsOriginHandler = (origin, callback) => {
+    if (isOriginAllowed(origin)) {
+        callback(null, true);
+    } else {
+        console.warn(`[CORS] Blocked origin: ${origin ?? 'undefined'}`);
+        callback(new Error('Not allowed by CORS'));
+    }
+};
+
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: (origin, callback) => {
-            if (isOriginAllowed(origin)) {
-                callback(null, true);
-            } else {
-                callback(new Error('Not allowed by CORS'));
-            }
-        },
+        origin: corsOriginHandler,
         credentials: true,
         methods: ['GET', 'POST']
     }
 });
 
 app.use(cors({
-    origin: (origin, callback) => {
-        if (isOriginAllowed(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
+    origin: corsOriginHandler,
     credentials: true
 }));
 
