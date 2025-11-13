@@ -1,4 +1,4 @@
-# 💬 ChatVerse - Real-Time Room-Based Chat Application
+# 💬 ChatVerse - Real-Time Chat Application
 
 <div align="center">
 
@@ -7,9 +7,9 @@
 ![Node.js](https://img.shields.io/badge/Node.js-Express-green?style=for-the-badge&logo=node.js)
 ![Socket.IO](https://img.shields.io/badge/Socket.IO-4.8-white?style=for-the-badge&logo=socket.io)
 
-**A modern, real-time room-based chat application with request-based access control**
+**A modern, real-time chat application with request-based access control**
 
-[Live Demo](https://chatverse-client.vercel.app) • [Features](#features) • [Tech Stack](#tech-stack)
+[Live Demo](https://chatverse-client.vercel.app) • [Features](#-features) • [Tech Stack](#-tech-stack)
 
 </div>
 
@@ -17,33 +17,43 @@
 
 ## 🎯 Overview
 
-ChatVerse is a full-stack real-time chat application that enables users to create rooms and chat with others through a request-based system. Users can create rooms, view active rooms, request to join rooms, and chat after approval. The application features a modern, responsive UI built with React and Tailwind CSS, and a robust backend powered by Node.js and Socket.IO.
+ChatVerse is a full-stack real-time chat application featuring a simplified request-based system. Users can request to join the main chat room, and existing members can accept or reject requests. The application features a professional, responsive UI built with React and Tailwind CSS, and a robust backend powered by Node.js and Socket.IO.
 
 ### Key Highlights
 
 - ⚡ **Real-Time Communication**: Instant message delivery using WebSocket connections
-- 🏠 **Room-Based System**: Create and join chat rooms with request-based access
-- 🎨 **Modern UI/UX**: Beautiful, responsive design with glassmorphism effects
+- 🎨 **Professional UI/UX**: Beautiful design with glassmorphism effects, animations, and toast notifications
 - 📱 **Mobile Responsive**: Works seamlessly on desktop and mobile devices
-- 🚀 **Fast Performance**: Optimized for speed with React 19 and Vite
+- 🚀 **Fast Performance**: Optimized with React 19, custom hooks, and Vite
 - 🔒 **Secure**: CORS-enabled backend with secure socket connections
 - ☁️ **Cloud Deployed**: Frontend on Vercel, Backend on Render
+- 🎯 **Simple Flow**: Easy-to-use request/acceptance system
 
 ## ✨ Features
 
 ### Core Features
-- ✅ **Room Creation**: Users can create their own chat rooms
-- ✅ **Active Room List**: View all active rooms with user counts
-- ✅ **Join Requests**: Request-based system to join rooms
-- ✅ **Request Management**: Room owners can accept/reject join requests
-- ✅ **Real-Time Messaging**: Instant message delivery within rooms
+
+- ✅ **Request-Based Access**: Users request to join the main chat room
+- ✅ **Auto-Accept First User**: First user automatically gets access
+- ✅ **Request Management**: Room members can accept/reject join requests
+- ✅ **Real-Time Messaging**: Instant message delivery within the room
 - ✅ **User Join/Leave Notifications**: Real-time notifications when users join or leave
 - ✅ **Message History**: View all messages in the chat room
 - ✅ **Auto-Scroll**: Automatic scrolling to latest messages
 - ✅ **Responsive Design**: Works on all screen sizes
-- ✅ **Modern UI**: Clean and intuitive user interface with glassmorphism
+- ✅ **Professional UI**: Modern interface with animations and toast notifications
+
+### React Features
+
+- ✅ **Custom Hooks**: `useToast` for notifications, `useSocket` for socket management
+- ✅ **React Patterns**: `useCallback`, `useMemo`, `Suspense` for optimal performance
+- ✅ **Toast Notifications**: Beautiful toast system for user feedback
+- ✅ **Loading States**: Professional loading spinners and page loaders
+- ✅ **Smooth Animations**: Fade-in, slide-in, and scale animations
+- ✅ **Form Validation**: Real-time username validation
 
 ### Technical Features
+
 - ✅ **WebSocket Integration**: Real-time bidirectional communication
 - ✅ **Socket.IO Rooms**: Efficient room-based message broadcasting
 - ✅ **React Router**: Client-side routing
@@ -55,7 +65,8 @@ ChatVerse is a full-stack real-time chat application that enables users to creat
 ## 🛠️ Tech Stack
 
 ### Frontend
-- **React 19.0** - Modern UI library
+
+- **React 19.0** - Modern UI library with hooks
 - **React Router 7.4** - Client-side routing
 - **Tailwind CSS 4.0** - Utility-first CSS framework
 - **Vite 6.2** - Fast build tool and dev server
@@ -64,13 +75,14 @@ ChatVerse is a full-stack real-time chat application that enables users to creat
 - **React Scroll To Bottom** - Auto-scroll functionality
 
 ### Backend
+
 - **Node.js** - JavaScript runtime
 - **Express 4.21** - Web framework
 - **Socket.IO 4.8** - Real-time bidirectional communication
 - **CORS 2.8** - Cross-origin resource sharing
-- **dotenv 16.4** - Environment variable management
 
 ### Deployment
+
 - **Vercel** - Frontend hosting
 - **Render** - Backend hosting
 - **GitHub** - Version control
@@ -78,15 +90,19 @@ ChatVerse is a full-stack real-time chat application that enables users to creat
 ## 📁 Project Structure
 
 ```
-ChatVerse-main/
+ChatVerse/
 ├── Client/                 # Frontend React Application
 │   ├── src/
 │   │   ├── components/     # React components
-│   │   │   ├── Join/       # Room creation page
-│   │   │   ├── RoomList.jsx # Active rooms list
-│   │   │   ├── Requests.jsx # Join request management
+│   │   │   ├── Join/       # Login/name entry page
+│   │   │   ├── SimpleRequest.jsx # Request to join page
 │   │   │   ├── chat.jsx    # Chat room component
-│   │   │   └── Message.jsx # Message component
+│   │   │   ├── Message.jsx # Message component
+│   │   │   ├── Toast.jsx   # Toast notification component
+│   │   │   └── LoadingSpinner.jsx # Loading components
+│   │   ├── hooks/          # Custom React hooks
+│   │   │   ├── useToast.js # Toast notification hook
+│   │   │   └── useSocket.js # Socket management hook
 │   │   ├── images/         # Image assets
 │   │   ├── App.jsx         # Main App component
 │   │   └── main.jsx        # Entry point
@@ -114,7 +130,7 @@ ChatVerse-main/
 1. **Clone the repository**
    ```bash
    git clone https://github.com/KartikNaphade2004/Chatverse.git
-   cd ChatVerse-main
+   cd Chatverse
    ```
 
 2. **Install Frontend Dependencies**
@@ -163,18 +179,20 @@ ChatVerse-main/
 
 3. **Use the Application**
    - Open your browser and navigate to `http://localhost:5173`
-   - Create a room with a room name and your name
-   - View active rooms and request to join
-   - Room owners can accept/reject requests
+   - Enter your name and continue
+   - Request to join the main chat room
+   - First user gets auto-accepted, others wait for approval
+   - Room members can accept/reject requests
    - Start chatting after approval!
 
 ### Application Flow
 
-1. **Create Room**: Enter room name and your name to create a room
-2. **View Rooms**: See all active rooms with user counts
-3. **Request to Join**: Click "Request to Join" on any room
-4. **Manage Requests**: Room owners see and manage join requests
-5. **Chat**: After approval, users can chat in the room
+1. **Enter Name**: Enter your name (2-20 characters)
+2. **Request to Join**: Click "Request to Join" on the main chat room
+3. **Auto-Accept (First User)**: First user automatically gets access
+4. **Wait for Approval**: Subsequent users wait for room members to approve
+5. **Manage Requests**: Room members see and manage join requests
+6. **Chat**: After approval, users can chat in the room
 
 ## 🌐 Deployment
 
@@ -182,7 +200,7 @@ ChatVerse-main/
 
 1. Connect your GitHub repository to Vercel
 2. Set root directory to `Client`
-3. Add environment variable: `VITE_SERVER_URL=https://your-backend-url.com`
+3. Add environment variable: `VITE_SERVER_URL=https://your-backend-url.onrender.com`
 4. Deploy!
 
 ### Backend Deployment (Render)
@@ -190,11 +208,12 @@ ChatVerse-main/
 1. Create a new Web Service on Render
 2. Connect your GitHub repository
 3. Set root directory to `Server`
-4. Add environment variables:
+4. Set start command: `node app.js`
+5. Add environment variables:
    - `PORT=3000`
    - `ALLOWED_ORIGINS=https://your-frontend-url.vercel.app`
    - `NODE_ENV=production`
-5. Deploy!
+6. Deploy!
 
 ## 📚 API Documentation
 
@@ -202,34 +221,34 @@ ChatVerse-main/
 
 #### Client to Server
 
-- **`createRoom`**: Create a new chat room
+- **`checkAccess`**: Check if user has access to room
   ```javascript
-  socket.emit('createRoom', { room: 'RoomName', user: 'Username' });
+  socket.emit('checkAccess', { user: 'Username', room: 'Main Chat Room' });
   ```
 
-- **`getActiveRooms`**: Get list of active rooms
+- **`requestJoinRoom`**: Request to join the main room
   ```javascript
-  socket.emit('getActiveRooms');
+  socket.emit('requestJoinRoom', { room: 'Main Chat Room', user: 'Username' });
   ```
 
-- **`requestJoinRoom`**: Request to join a room
+- **`acceptJoinRequest`**: Accept a join request (room members only)
   ```javascript
-  socket.emit('requestJoinRoom', { room: 'RoomName', user: 'Username' });
+  socket.emit('acceptJoinRequest', { room: 'Main Chat Room', requestingUser: 'Username', requestingSocketId: 'socketId' });
   ```
 
-- **`acceptJoinRequest`**: Accept a join request (room owner only)
+- **`rejectJoinRequest`**: Reject a join request (room members only)
   ```javascript
-  socket.emit('acceptJoinRequest', { room: 'RoomName', requestingUser: 'Username', requestingSocketId: 'socketId' });
+  socket.emit('rejectJoinRequest', { room: 'Main Chat Room', requestingUser: 'Username' });
   ```
 
-- **`rejectJoinRequest`**: Reject a join request (room owner only)
+- **`getJoinRequests`**: Get list of join requests
   ```javascript
-  socket.emit('rejectJoinRequest', { room: 'RoomName', requestingUser: 'Username' });
+  socket.emit('getJoinRequests', { room: 'Main Chat Room' });
   ```
 
 - **`joinRoom`**: Join a room after request accepted
   ```javascript
-  socket.emit('joinRoom', { user: 'Username', room: 'RoomName' });
+  socket.emit('joinRoom', { user: 'Username', room: 'Main Chat Room' });
   ```
 
 - **`message`**: Send a message
@@ -239,28 +258,29 @@ ChatVerse-main/
 
 #### Server to Client
 
-- **`activeRooms`**: List of active rooms
-- **`roomCreated`**: Room created successfully
-- **`roomExists`**: Room already exists
-- **`joinRequestSent`**: Join request sent
+- **`hasAccess`**: User has access to room
+- **`noAccess`**: User doesn't have access
+- **`joinRequestSent`**: Join request sent successfully
 - **`joinRequestAccepted`**: Join request accepted
 - **`joinRequestRejected`**: Join request rejected
-- **`newJoinRequest`**: New join request (room owner)
-- **`joinRequests`**: List of join requests (room owner)
+- **`newJoinRequest`**: New join request (room members)
+- **`joinRequests`**: List of join requests
 - **`sendMessage`**: Receive a message
 - **`userJoinedRoom`**: User joined the room
 - **`userLeftRoom`**: User left the room
-- **`roomDeleted`**: Room was deleted
+- **`roomUsersUpdate`**: Updated list of room users
 
 ## 🎨 UI/UX Features
 
-- **Modern Design**: Clean and intuitive interface
-- **Glassmorphism**: Beautiful glassmorphism effects
+- **Professional Design**: Clean and intuitive interface with glassmorphism
+- **Toast Notifications**: Beautiful toast system for user feedback
+- **Smooth Animations**: Fade-in, slide-in, and scale animations
+- **Loading States**: Professional loading spinners
+- **Form Validation**: Real-time username validation with visual feedback
 - **Responsive Layout**: Works on all devices
-- **Smooth Animations**: Enhanced user experience
 - **Auto-Scroll**: Automatically scrolls to latest messages
 - **Real-Time Updates**: Instant message delivery
-- **User-Friendly**: Easy to use and navigate
+- **Connection Status**: Visual connection indicators
 
 ## 🔧 Configuration
 
