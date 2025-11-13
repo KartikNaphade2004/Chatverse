@@ -388,21 +388,24 @@ io.on("connection",(socket)=>{
         }
 
         // Check if user is allowed in room (by username, not socket.id)
+        // This handles the case where user navigates to chat and gets a new socket connection
         const userSocketId = Object.keys(rooms[room].users).find(
             sid => rooms[room].users[sid] === user
         );
 
         if (!userSocketId) {
             console.error(`User ${user} not found in room ${room}. Room users:`, rooms[room].users);
+            console.error(`Available users in room:`, Object.values(rooms[room].users));
             socket.emit('error', { message: 'You are not authorized to join this room. Please request access first.' });
             return;
         }
         
         console.log(`User ${user} found in room with socket ${userSocketId}, current socket: ${socket.id}`);
 
-        // CRITICAL: Update socket ID if different (user reconnected or new connection)
+        // CRITICAL: ALWAYS update socket ID (user navigated to chat = new socket connection)
+        // This is normal - when user goes to chat page, they get a new socket
         if (userSocketId !== socket.id) {
-            console.log(`Socket ID changed for ${user}: ${userSocketId} -> ${socket.id}`);
+            console.log(`Socket ID changed for ${user}: ${userSocketId} -> ${socket.id} (normal - new chat connection)`);
             // Remove old socket from room
             const oldSocket = io.sockets.sockets.get(userSocketId);
             if (oldSocket) {
@@ -411,14 +414,12 @@ io.on("connection",(socket)=>{
             }
             delete rooms[room].users[userSocketId];
             delete socketToRoom[userSocketId];
-            
-            // Add new socket to room
-            rooms[room].users[socket.id] = user;
-            socketToRoom[socket.id] = room;
-            console.log(`Added new socket ${socket.id} for ${user}`);
-        } else {
-            console.log(`Socket ID unchanged for ${user}: ${socket.id}`);
         }
+        
+        // ALWAYS add/update current socket to room
+        rooms[room].users[socket.id] = user;
+        socketToRoom[socket.id] = room;
+        console.log(`User ${user} mapped to socket ${socket.id} in room ${room}`);
 
         // CRITICAL: Join the socket room
         socket.join(room);

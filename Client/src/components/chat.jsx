@@ -56,12 +56,18 @@ const Chat = () => {
 
         socket.on('error', (error) => {
             console.error('Socket error:', error);
-            if (error.message && error.message.includes('authorized')) {
+            const errorMsg = error.message || '';
+            
+            // Only redirect if it's a real authorization issue, not a temporary connection issue
+            if (errorMsg.includes('not authorized') && !errorMsg.includes('request access')) {
+                console.error('Authorization error, redirecting to request page');
                 navigate('/request');
-            } else if (error.message && error.message.includes('Room does not exist')) {
-                // Room doesn't exist - go back to request page
+            } else if (errorMsg.includes('Room does not exist')) {
                 console.error('Room does not exist, redirecting to request page');
                 navigate('/request');
+            } else {
+                // Don't redirect for other errors - just log them
+                console.error('Socket error (not redirecting):', error);
             }
         });
 
