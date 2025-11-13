@@ -480,24 +480,34 @@ io.on("connection",(socket)=>{
             socket.join(room);
         }
 
-        // Send room users list (excluding current user)
+        // Send room users list to the joining user (excluding themselves)
         const roomUsers = Object.values(rooms[room].users).filter(u => u !== user);
         socket.emit('roomUsers', roomUsers);
         console.log(`Sent ${roomUsers.length} users to ${user}:`, roomUsers);
 
         // Notify others in the room about new user (only if not first connection)
         if (userSocketId !== socket.id) {
-            socket.to(room).emit('userJoinedRoom', {
+            io.to(room).emit('userJoinedRoom', {
                 user: user,
                 room: room,
                 timestamp: new Date().toISOString()
             });
         }
 
-        // Send updated room users list to all (excluding the joining user)
-        const updatedRoomUsers = Object.values(rooms[room].users);
-        socket.to(room).emit('roomUsersUpdate', updatedRoomUsers.filter(u => u !== user));
-        socket.emit('roomUsersUpdate', updatedRoomUsers.filter(u => u !== user));
+        // CRITICAL: Send updated room users list to ALL users in the room
+        // Each user should see all OTHER users (excluding themselves)
+        const allRoomUsers = Object.values(rooms[room].users);
+        console.log(`Broadcasting user list update to all ${roomSockets.length} sockets in room`);
+        
+        // Send to each socket individually with their filtered list
+        roomSockets.forEach(socketId => {
+            const socketUser = rooms[room].users[socketId];
+            if (socketUser) {
+                const otherUsers = allRoomUsers.filter(u => u !== socketUser);
+                io.to(socketId).emit('roomUsersUpdate', otherUsers);
+                console.log(`Sent ${otherUsers.length} users to ${socketUser}:`, otherUsers);
+            }
+        });
     });
 
     // Get room users
@@ -518,28 +528,49 @@ io.on("connection",(socket)=>{
     socket.on('message', ({message, id})=>{
         // Use the socket.id from the current socket, not the passed id
         const room = socketToRoom[socket.id];
-        console.log(`Message from socket ${socket.id}, room: ${room}, message: ${message}`);
-        console.log(`socketToRoom mapping:`, socketToRoom);
-        console.log(`rooms[${room}] users:`, room ? rooms[room]?.users : 'N/A');
+        console.log(`\n=== MESSAGE EVENT ===`);
+        console.log(`Socket ID: ${socket.id}`);
+        console.log(`Room: ${room}`);
+        console.log(`Message: ${message}`);
+        console.log(`socketToRoom:`, socketToRoom);
         
-        if (room && rooms[room] && rooms[room].users[socket.id] && message){
-            const user = rooms[room].users[socket.id];
-            const roomSockets = Array.from(io.sockets.adapter.rooms.get(room) || []);
-            console.log(`Broadcasting message from ${user} to room ${room} (${roomSockets.length} sockets)`);
-            console.log(`Sockets in room:`, roomSockets);
-            
-            // CRITICAL: Broadcast to ALL users in the room (including sender)
-            io.to(room).emit('sendMessage', {
-                user: user,
-                message: message,
-                id: socket.id,
-                timestamp: new Date().toISOString()
-            });
-            
-            console.log(`Message broadcasted successfully`);
-        } else {
-            console.error(`Message failed - room: ${room}, user in room: ${room ? rooms[room]?.users[socket.id] : 'N/A'}, message: ${message}`);
+        if (!room) {
+            console.error(`✗ No room found for socket ${socket.id}`);
+            return;
         }
+        
+        if (!rooms[room]) {
+            console.error(`✗ Room ${room} does not exist`);
+            return;
+        }
+        
+        if (!rooms[room].users[socket.id]) {
+            console.error(`✗ User not found in room. Room users:`, rooms[room].users);
+            return;
+        }
+        
+        if (!message || !message.trim()) {
+            console.error(`✗ Empty message`);
+            return;
+        }
+        
+        const user = rooms[room].users[socket.id];
+        const roomSockets = Array.from(io.sockets.adapter.rooms.get(room) || []);
+        
+        console.log(`✓ Broadcasting message from ${user} to room ${room}`);
+        console.log(`✓ Room has ${roomSockets.length} sockets:`, roomSockets);
+        console.log(`✓ Room has ${Object.keys(rooms[room].users).length} users:`, Object.values(rooms[room].users));
+        
+        // CRITICAL: Broadcast to ALL users in the room (including sender)
+        io.to(room).emit('sendMessage', {
+            user: user,
+            message: message.trim(),
+            id: socket.id,
+            timestamp: new Date().toISOString()
+        });
+        
+        console.log(`✓ Message broadcasted to ${roomSockets.length} sockets`);
+        console.log(`=== END MESSAGE ===\n`);
     });
 
     // Disconnect

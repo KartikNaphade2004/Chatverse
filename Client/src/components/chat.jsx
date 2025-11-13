@@ -81,15 +81,17 @@ const Chat = () => {
             }
         });
 
-        socket.on('roomUsers', (users) => {
-            // Users list already excludes current user from backend
-            setOnlineUsers(users || []);
-        });
+            socket.on('roomUsers', (users) => {
+                console.log('👥 Received roomUsers:', users);
+                // Users list already excludes current user from backend
+                setOnlineUsers(users || []);
+            });
 
-        socket.on('roomUsersUpdate', (users) => {
-            // Users list already excludes current user from backend
-            setOnlineUsers(users || []);
-        });
+            socket.on('roomUsersUpdate', (users) => {
+                console.log('👥 Received roomUsersUpdate:', users);
+                // Users list already excludes current user from backend
+                setOnlineUsers(users || []);
+            });
 
         socket.on('userJoinedRoom', (data) => {
             setMessages((prevMessages) => [...prevMessages, {
@@ -122,27 +124,37 @@ const Chat = () => {
         };
     }, [room, user, navigate]);
 
-    useEffect(() => {
-        if (!socket) return;
+        useEffect(() => {
+            if (!socket) return;
 
-        const handleMessage = (data) => {
-            console.log('Received message:', data);
-            setMessages((prevMessages) => [...prevMessages, { 
-                user: data.user, 
-                message: data.message, 
-                id: data.id,
-                timestamp: data.timestamp || new Date().toISOString() 
-            }]);
-        };
+            const handleMessage = (data) => {
+                console.log('📨 Received message:', data);
+                setMessages((prevMessages) => {
+                    // Check if message already exists (prevent duplicates)
+                    const exists = prevMessages.some(
+                        msg => msg.id === data.id && msg.message === data.message && msg.timestamp === data.timestamp
+                    );
+                    if (exists) {
+                        console.log('⚠️ Duplicate message ignored');
+                        return prevMessages;
+                    }
+                    return [...prevMessages, { 
+                        user: data.user, 
+                        message: data.message, 
+                        id: data.id,
+                        timestamp: data.timestamp || new Date().toISOString() 
+                    }];
+                });
+            };
 
-        socket.on('sendMessage', handleMessage);
+            socket.on('sendMessage', handleMessage);
 
-        return () => {
-            if (socket) {
-                socket.off('sendMessage', handleMessage);
-            }
-        };
-    }, [socket]);
+            return () => {
+                if (socket) {
+                    socket.off('sendMessage', handleMessage);
+                }
+            };
+        }, [socket]);
 
     const send = () => {
         const message = messageInput.trim();
