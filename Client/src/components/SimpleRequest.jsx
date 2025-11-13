@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { UserPlus, Check, X, Users, MessageCircle, ArrowLeft, Sparkles, Wifi, WifiOff, Send } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { UserPlus, Check, X, Users, MessageCircle, ArrowLeft, Sparkles, Wifi, WifiOff, Send, Clock, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import socketIO from 'socket.io-client';
+import { useToast } from '../hooks/useToast';
+import { ToastContainer } from './Toast';
 
 const ENDPOINT = import.meta.env.VITE_SERVER_URL || "https://chatverse-backend-01hn.onrender.com";
 
@@ -11,9 +13,11 @@ const SimpleRequest = () => {
     const [isConnected, setIsConnected] = useState(false);
     const [hasRequested, setHasRequested] = useState(false);
     const [isAccepted, setIsAccepted] = useState(false);
+    const [isInRoom, setIsInRoom] = useState(false);
     const navigate = useNavigate();
     const currentUser = sessionStorage.getItem("user") || "Anonymous";
     const MAIN_ROOM = "Main Chat Room";
+    const { toasts, showToast, removeToast } = useToast();
 
     useEffect(() => {
         if (!currentUser) {
@@ -57,16 +61,26 @@ const SimpleRequest = () => {
 
         newSocket.on('joinRequestSent', () => {
             setHasRequested(true);
+            showToast('Request sent successfully!', 'success');
         });
 
         newSocket.on('joinRequestAccepted', () => {
             setIsAccepted(true);
-            setTimeout(() => navigate('/chat'), 1000);
+            showToast('Request accepted! Redirecting...', 'success');
+            setTimeout(() => navigate('/chat'), 1500);
         });
 
         newSocket.on('joinRequestRejected', () => {
             setHasRequested(false);
-            alert('Your request was rejected. You can request again.');
+            showToast('Your request was rejected. You can request again.', 'error');
+        });
+
+        newSocket.on('hasAccess', () => {
+            setIsInRoom(true);
+        });
+
+        newSocket.on('noAccess', () => {
+            setIsInRoom(false);
         });
 
         setSocket(newSocket);
@@ -78,16 +92,18 @@ const SimpleRequest = () => {
         };
     }, [currentUser, navigate]);
 
-    const handleRequestJoin = () => {
+    const handleRequestJoin = useCallback(() => {
         if (socket && socket.connected) {
             socket.emit('requestJoinRoom', {
                 room: MAIN_ROOM,
                 user: currentUser
             });
+        } else {
+            showToast('Not connected to server. Please wait...', 'warning');
         }
-    };
+    }, [socket, currentUser, showToast]);
 
-    const acceptRequest = (requestingUser, requestingSocketId) => {
+    const acceptRequest = useCallback((requestingUser, requestingSocketId) => {
         if (socket) {
             socket.emit('acceptJoinRequest', {
                 room: MAIN_ROOM,
@@ -95,34 +111,24 @@ const SimpleRequest = () => {
                 requestingSocketId: requestingSocketId
             });
             setJoinRequests(prev => prev.filter(req => req.user !== requestingUser));
+            showToast(`${requestingUser} has been accepted!`, 'success');
         }
-    };
+    }, [socket, showToast]);
 
-    const rejectRequest = (requestingUser) => {
+    const rejectRequest = useCallback((requestingUser) => {
         if (socket) {
             socket.emit('rejectJoinRequest', {
                 room: MAIN_ROOM,
                 requestingUser: requestingUser
             });
             setJoinRequests(prev => prev.filter(req => req.user !== requestingUser));
+            showToast(`${requestingUser} has been rejected.`, 'info');
         }
-    };
-
-    // Check if user is in room (can manage requests)
-    const [isInRoom, setIsInRoom] = useState(false);
+    }, [socket, showToast]);
     
-    useEffect(() => {
-        if (socket) {
-            socket.on('hasAccess', () => {
-                setIsInRoom(true);
-            });
-            socket.on('noAccess', () => {
-                setIsInRoom(false);
-            });
-        }
-    }, [socket]);
-    
-    const canManageRequests = isInRoom && joinRequests.length > 0;
+    const canManageRequests = useMemo(() => {
+        return isInRoom && joinRequests.length > 0;
+    }, [isInRoom, joinRequests.length]);
 
     if (isAccepted) {
         return (
@@ -139,7 +145,9 @@ const SimpleRequest = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
+        <>
+            <ToastContainer toasts={toasts} onRemove={removeToast} />
+            <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
             {/* Animated Background */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute top-20 left-10 w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob"></div>
@@ -193,12 +201,12 @@ const SimpleRequest = () => {
                             Request to Join
                         </button>
                     ) : (
-                        <div className="bg-blue-50 border-2 border-blue-200 text-blue-700 px-6 py-4 rounded-xl text-center animate-fade-in">
+                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 text-blue-700 px-6 py-4 rounded-xl text-center animate-fade-in">
                             <div className="flex items-center justify-center gap-2 mb-2">
-                                <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                                <Clock className="w-5 h-5 animate-pulse" />
                                 <span className="font-semibold">Request Sent!</span>
                             </div>
-                            <p className="text-sm">Waiting for approval...</p>
+                            <p className="text-sm">Waiting for approval from room members...</p>
                         </div>
                     )}
                 </div>
@@ -249,6 +257,7 @@ const SimpleRequest = () => {
                 )}
             </div>
         </div>
+        </>
     );
 };
 

@@ -1,20 +1,29 @@
-import React , {useState} from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 import './Join.css'
 import logo from '../../images/logo.png'
-import {useNavigate} from 'react-router-dom'
-import { ArrowRight, Sparkles, Zap } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { ArrowRight, Sparkles, Zap, TrendingUp, Shield, Zap as ZapIcon } from 'lucide-react'
 
 const Join = () => {
    const [username, setUsername] = useState("");
    const [focused, setFocused] = useState(false);
+   const [isSubmitting, setIsSubmitting] = useState(false);
    const navigate = useNavigate();
 
-   const handleContinue = () => {
-    if (username.trim()) {
-      sessionStorage.setItem("user", username.trim());
-      navigate('/request');
+   const isValidUsername = useMemo(() => {
+     return username.trim().length >= 2 && username.trim().length <= 20;
+   }, [username]);
+
+   const handleContinue = useCallback(() => {
+    if (isValidUsername && !isSubmitting) {
+      setIsSubmitting(true);
+      // Simulate smooth transition
+      setTimeout(() => {
+        sessionStorage.setItem("user", username.trim());
+        navigate('/request');
+      }, 300);
     }
-   }
+   }, [username, isValidUsername, isSubmitting, navigate]);
 
   return (
     <div className='JoinPage relative min-h-screen w-full flex items-center justify-center overflow-hidden'>
@@ -45,13 +54,29 @@ const Join = () => {
                 />
               </div>
             </div>
-            <h1 className='text-6xl md:text-7xl font-extrabold mb-2 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent'>
+            <h1 className='text-6xl md:text-7xl font-extrabold mb-2 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent animate-fade-in'>
               Chat Verse
             </h1>
             <div className="flex items-center justify-center gap-2 text-gray-600 text-sm font-medium">
               <Sparkles className="w-4 h-4 text-yellow-500 animate-pulse" />
               <span>Real-Time Chat Experience</span>
               <Zap className="w-4 h-4 text-blue-500" />
+            </div>
+            <div className="flex items-center justify-center gap-4 mt-4 text-xs text-gray-500">
+              <div className="flex items-center gap-1">
+                <Shield className="w-3 h-3" />
+                <span>Secure</span>
+              </div>
+              <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
+              <div className="flex items-center gap-1">
+                <ZapIcon className="w-3 h-3" />
+                <span>Fast</span>
+              </div>
+              <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
+              <div className="flex items-center gap-1">
+                <TrendingUp className="w-3 h-3" />
+                <span>Real-time</span>
+              </div>
             </div>
           </div>
 
@@ -68,19 +93,25 @@ const Join = () => {
                     focused
                       ? 'border-blue-500 shadow-lg shadow-blue-500/30 scale-[1.01]' 
                       : 'border-gray-200 hover:border-blue-300'
-                  }`}
-                  placeholder="Your name"
+                  } ${!isValidUsername && username.length > 0 ? 'border-red-300' : ''}`}
+                  placeholder="Enter your name (2-20 characters)"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   onFocus={() => setFocused(true)}
                   onBlur={() => setFocused(false)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' && username.trim()) {
+                    if (e.key === 'Enter' && isValidUsername) {
                       handleContinue();
                     }
                   }}
                   id="username"
+                  maxLength={20}
                 />
+                {username.length > 0 && !isValidUsername && (
+                  <p className="text-red-500 text-xs mt-1 ml-1 animate-fade-in">
+                    Name must be 2-20 characters
+                  </p>
+                )}
                 {focused && (
                   <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-xl -z-10 blur-xl"></div>
                 )}
@@ -90,11 +121,20 @@ const Join = () => {
             <button 
               className="group relative w-full p-4 text-lg bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white rounded-xl font-semibold transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none overflow-hidden"
               onClick={handleContinue}
-              disabled={!username.trim()}
+              disabled={!isValidUsername || isSubmitting}
             >
               <span className="relative z-10 flex items-center justify-center gap-2">
-                Continue
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                {isSubmitting ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Connecting...</span>
+                  </>
+                ) : (
+                  <>
+                    Continue
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </>
+                )}
               </span>
               <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             </button>
