@@ -5,32 +5,61 @@ import { Server } from "socket.io";
 import cors from 'cors'
 dotenv.config();
 const app = express();
-// CORS configuration - allow both localhost and Vercel deployment
-const allowedOrigins = process.env.ALLOWED_ORIGINS 
-    ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
-    : ['http://localhost:5173', 'http://localhost:5174'];
+// CORS configuration - allow both localhost and hosted deployments
+const defaultAllowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'https://chatverse.vercel.app',
+    'https://chatverse-gjif543m5-kartik-naphades-projects.vercel.app'
+];
+
+if (process.env.VERCEL_URL) {
+    defaultAllowedOrigins.push(`https://${process.env.VERCEL_URL}`);
+}
+
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim()).filter(Boolean)
+    : defaultAllowedOrigins;
+
+const isOriginAllowed = (origin) => {
+    if (!origin) {
+        return process.env.NODE_ENV !== 'production';
+    }
+
+    if (allowedOrigins.includes(origin)) {
+        return true;
+    }
+
+    try {
+        const { hostname } = new URL(origin);
+        if (hostname.endsWith('.vercel.app')) {
+            return true;
+        }
+    } catch (error) {
+        console.warn(`Invalid origin format received for CORS check: ${origin}`);
+    }
+
+    return false;
+};
 
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: process.env.NODE_ENV === 'production' ? allowedOrigins : true,
+        origin: (origin, callback) => {
+            if (isOriginAllowed(origin)) {
+                callback(null, true);
+            } else {
+                callback(new Error('Not allowed by CORS'));
+            }
+        },
         credentials: true,
         methods: ['GET', 'POST']
     }
 });
 
 app.use(cors({
-    origin: function (origin, callback) {
-        if (!origin) {
-            if (process.env.NODE_ENV !== 'production') {
-                return callback(null, true);
-            }
-            return callback(new Error('Not allowed by CORS - no origin'));
-        }
-        
-        if (allowedOrigins.indexOf(origin) !== -1) {
-            callback(null, true);
-        } else if (process.env.NODE_ENV !== 'production') {
+    origin: (origin, callback) => {
+        if (isOriginAllowed(origin)) {
             callback(null, true);
         } else {
             callback(new Error('Not allowed by CORS'));

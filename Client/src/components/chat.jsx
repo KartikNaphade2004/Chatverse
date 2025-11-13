@@ -134,139 +134,140 @@ const Chat = () => {
     };
 
     return (
-        <div className="chatPage relative bg-gradient-to-br from-gray-50 to-blue-50 h-screen w-screen flex overflow-hidden">
-            {/* Sidebar - Enhanced Design */}
-            <div className="w-64 bg-gradient-to-b from-gray-800 to-gray-900 flex flex-col flex-shrink-0 shadow-2xl">
+        <div className="chatPage space-scene relative h-screen w-screen flex text-white overflow-hidden">
+            <div className="among-overlay"></div>
+
+            {/* Sidebar */}
+            <div className="w-72 bg-[rgba(6,11,35,0.92)] backdrop-blur-xl border-r border-[rgba(123,92,255,0.25)] flex flex-col flex-shrink-0 shadow-[0_20px_60px_rgba(5,8,25,0.8)] relative z-10">
                 {/* Sidebar Header */}
-                <div className="h-16 bg-gray-900 border-b border-gray-700 flex items-center px-4 shadow-lg">
+                <div className="h-20 border-b border-[rgba(123,92,255,0.25)] px-5 flex items-center justify-between">
                     <button 
                         onClick={handleBackToRooms}
-                        className="p-2 hover:bg-gray-700 rounded-lg text-gray-300 transition-all hover:scale-110"
+                        className="crew-visor text-xs gap-2"
                         title="Back"
                     >
-                        <ArrowLeft className="w-5 h-5" />
+                        <ArrowLeft className="w-4 h-4" />
+                        Lobby
                     </button>
-                    <div className="flex-1 ml-3">
-                        <h2 className="text-white font-bold text-sm truncate">{room}</h2>
+                    <div className="text-right">
+                        <p className="text-sm font-semibold truncate max-w-[150px]">{room}</p>
                         {isRoomOwner && (
-                            <p className="text-yellow-400 text-xs font-semibold">👑 Room Owner</p>
+                            <span className="text-[0.6rem] uppercase tracking-[0.25em] text-[#ffd166]">Captain</span>
                         )}
                     </div>
                 </div>
 
                 {/* Room Info */}
-                <div className="p-4 border-b border-gray-700 bg-gray-800/50">
-                    <div className="flex items-center gap-2 text-gray-300 mb-3">
-                        <Hash className="w-4 h-4 text-blue-400" />
-                        <span className="text-sm font-semibold">Room Info</span>
-                    </div>
-                    <div className="text-gray-400 text-xs space-y-2">
-                        <div className="flex items-center gap-2">
-                            {isConnected ? (
-                                <Wifi className="w-4 h-4 text-green-400" />
-                            ) : (
-                                <WifiOff className="w-4 h-4 text-red-400" />
-                            )}
-                            <span className={isConnected ? 'text-green-400' : 'text-red-400'}>
-                                {isConnected ? 'Connected' : 'Disconnected'}
-                            </span>
+                <div className="p-5 border-b border-[rgba(123,92,255,0.25)]">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="w-12 h-12 rounded-2xl bg-[linear-gradient(135deg,rgba(0,194,255,0.35),rgba(123,92,255,0.35))] flex items-center justify-center">
+                            <Hash className="w-6 h-6 text-white" />
                         </div>
+                        <div>
+                            <p className="text-sm uppercase tracking-[0.25em] text-[var(--sus-text-secondary)]">Channel</p>
+                            <p className="text-xs text-[var(--sus-text-secondary)]">Crew transmissions active</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-[var(--sus-text-secondary)]">
+                        {isConnected ? (
+                            <>
+                                <Wifi className="w-4 h-4 text-[#5eead4]" />
+                                Linked
+                            </>
+                        ) : (
+                            <>
+                                <WifiOff className="w-4 h-4 text-[#f87171]" />
+                                Offline
+                            </>
+                        )}
                     </div>
                 </div>
 
-                {/* Online Users - Enhanced */}
-                <div className="flex-1 overflow-y-auto p-4 dark-scrollbar">
-                    <div className="flex items-center gap-2 text-gray-400 text-xs font-bold mb-4 uppercase tracking-wider">
-                        <Users className="w-4 h-4 text-blue-400" />
-                        Online — {onlineUsers.length + 1}
+                {/* Crew List */}
+                <div className="flex-1 overflow-y-auto p-5 dark-scrollbar">
+                    <div className="uppercase text-xs tracking-[0.28em] text-[var(--sus-text-secondary)] mb-4 flex items-center gap-2">
+                        <Users className="w-4 h-4 text-[#7dd3fc]" />
+                        Crew — {onlineUsers.length + 1}
                     </div>
-                    <div className="space-y-2">
-                        {/* Current User */}
-                        <div className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-700/50 transition-all bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-lg">
+                    <div className="space-y-3">
+                        <div className="among-card border border-[rgba(0,194,255,0.3)] bg-[rgba(4,7,20,0.85)] p-3 flex items-center gap-3">
+                            <div className="w-11 h-11 rounded-full bg-[linear-gradient(135deg,#ff4d6d,#7b5cff)] flex items-center justify-center text-white font-semibold">
                                 {user.charAt(0).toUpperCase()}
                             </div>
                             <div className="flex-1 min-w-0">
-                                <p className="text-gray-200 text-sm font-semibold truncate">{user}</p>
-                                {isRoomOwner && (
-                                    <p className="text-yellow-400 text-xs font-medium">Owner</p>
-                                )}
+                                <p className="font-semibold text-sm truncate">{user}</p>
+                                <p className="text-[0.65rem] uppercase tracking-[0.25em] text-[#7dd3fc]">
+                                    {isRoomOwner ? 'Captain' : 'Crewmate'}
+                                </p>
                             </div>
                         </div>
-                        {/* Other Users */}
                         {onlineUsers.map((onlineUser, index) => (
-                            <div key={index} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-700/50 transition-all animate-fade-in">
-                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white font-bold text-sm shadow-lg">
+                            <div key={index} className="among-card bg-[rgba(6,11,35,0.72)] border border-[rgba(123,92,255,0.25)] p-3 flex items-center gap-3 animate-fade-in">
+                                <div className="w-11 h-11 rounded-full bg-[linear-gradient(135deg,#3dd686,#00c2ff)] flex items-center justify-center text-[#061030] font-semibold">
                                     {onlineUser.charAt(0).toUpperCase()}
                                 </div>
-                                <p className="text-gray-200 text-sm font-medium truncate">{onlineUser}</p>
+                                <p className="text-sm font-medium truncate">{onlineUser}</p>
                             </div>
                         ))}
                     </div>
                 </div>
 
-                {/* User Info Footer */}
-                <div className="p-3 bg-gray-900 border-t border-gray-700 shadow-lg">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-lg">
-                            {user.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <p className="text-gray-200 text-sm font-semibold truncate">{user}</p>
-                        </div>
+                {/* Footer */}
+                <div className="p-4 border-t border-[rgba(123,92,255,0.25)]">
+                    <div className="flex items-center justify-between">
+                        <span className="text-xs uppercase tracking-[0.28em] text-[var(--sus-text-secondary)]">Status</span>
                         <button
                             onClick={handleLeave}
-                            className="p-1.5 hover:bg-red-500/20 rounded-lg text-gray-400 hover:text-red-400 transition-all"
+                            className="crew-visor text-xs gap-2 bg-[rgba(255,77,109,0.2)] border border-[rgba(255,118,107,0.5)] text-[#ffccd8]"
                             title="Leave"
                         >
                             <X className="w-4 h-4" />
+                            Exit
                         </button>
                     </div>
                 </div>
             </div>
 
             {/* Main Chat Area */}
-            <div className="flex-1 flex flex-col bg-white">
-                {/* Chat Header */}
-                <div className="h-16 bg-gradient-to-r from-white to-gray-50 border-b border-gray-200 flex items-center justify-between px-6 shadow-sm">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-lg">
-                            <Hash className="w-5 h-5" />
+            <div className="flex-1 flex flex-col relative z-10">
+                {/* Header */}
+                <div className="h-20 border-b border-[rgba(123,92,255,0.2)] px-6 flex items-center justify-between bg-[rgba(4,7,20,0.75)] backdrop-blur-xl">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-[linear-gradient(135deg,#00c2ff,#7b5cff)] flex items-center justify-center text-[#040714] font-extrabold shadow-[0_18px_45px_rgba(12,25,68,0.65)]">
+                            <Hash className="w-6 h-6" />
                         </div>
                         <div>
-                            <h2 className="text-gray-800 text-xl font-bold">{room}</h2>
-                            {isRoomOwner && (
-                                <span className="text-xs text-yellow-600 font-semibold">👑 Owner</span>
-                            )}
+                            <h2 className="text-xl font-bold tracking-tight">{room}</h2>
+                            <p className="text-[0.65rem] uppercase tracking-[0.3em] text-[var(--sus-text-secondary)]">
+                                Secure crew transmission
+                            </p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2 text-gray-600 text-sm">
+                    <div className="flex items-center gap-2 text-xs uppercase tracking-[0.25em]">
                         {isConnected ? (
-                            <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-lg">
-                                <Wifi className="w-4 h-4 text-green-500" />
-                                <span className="text-green-700 font-medium">Connected</span>
+                            <div className="crew-visor bg-[rgba(0,194,255,0.2)] border border-[rgba(0,194,255,0.35)] text-[#9fe9ff]">
+                                <Wifi className="w-4 h-4" />
+                                Link Stable
                             </div>
                         ) : (
-                            <div className="flex items-center gap-2 px-3 py-1.5 bg-red-50 border border-red-200 rounded-lg">
-                                <WifiOff className="w-4 h-4 text-red-500" />
-                                <span className="text-red-700 font-medium">Disconnected</span>
+                            <div className="crew-visor bg-[rgba(255,77,109,0.2)] border border-[rgba(255,118,107,0.4)] text-[#ffd6de]">
+                                <WifiOff className="w-4 h-4" />
+                                Reconnecting
                             </div>
                         )}
                     </div>
                 </div>
 
-                {/* Messages Area */}
-                <ReactScrollToBottom className="flex-1 overflow-y-auto bg-gradient-to-b from-gray-50 to-white p-6">
+                {/* Messages */}
+                <ReactScrollToBottom className="flex-1 overflow-y-auto px-6 py-8 bg-[rgba(4,7,20,0.55)] backdrop-blur-xl">
                     {messages.length === 0 ? (
-                        <div className="flex items-center justify-center h-full text-gray-400">
+                        <div className="flex items-center justify-center h-full text-[var(--sus-text-secondary)]">
                             <div className="text-center space-y-4">
-                                <div className="w-20 h-20 mx-auto bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center">
-                                    <MessageCircle className="w-10 h-10 text-blue-500" />
+                                <div className="w-24 h-24 mx-auto bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.35),rgba(0,194,255,0.25))] rounded-3xl flex items-center justify-center shadow-[0_20px_60px_rgba(7,14,38,0.65)]">
+                                    <MessageCircle className="w-12 h-12 text-white" />
                                 </div>
-                                <div className="space-y-2">
-                                    <p className="text-xl font-bold text-gray-600">No messages yet</p>
-                                    <p className="text-sm text-gray-500">Start the conversation!</p>
-                                </div>
+                                <p className="text-lg font-semibold text-white">Comms are clear</p>
+                                <p className="text-sm">Open the channel with your first transmission.</p>
                             </div>
                         </div>
                     ) : (
@@ -285,14 +286,14 @@ const Chat = () => {
                     )}
                 </ReactScrollToBottom>
 
-                {/* Input Area */}
-                <div className="h-20 bg-white border-t border-gray-200 flex items-center px-6 shadow-lg">
+                {/* Input */}
+                <div className="h-24 border-t border-[rgba(123,92,255,0.2)] bg-[rgba(4,7,20,0.82)] backdrop-blur-xl px-6 flex items-center">
                     <div className="w-full flex items-center gap-4">
                         <input 
                             type="text" 
                             id="chatInput" 
-                            className="flex-1 bg-gradient-to-r from-gray-50 to-white text-gray-800 focus:outline-none px-5 py-3.5 text-base rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all placeholder-gray-400 shadow-sm" 
-                            placeholder={isConnected ? `Message #${room}` : "Connecting..."}
+                            className="sus-input flex-1 rounded-2xl py-4 px-5 text-base"
+                            placeholder={isConnected ? `Transmit to #${room}` : "Synchronizing..."}
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter' && !e.shiftKey) {
                                     e.preventDefault();
@@ -304,26 +305,23 @@ const Chat = () => {
                             disabled={!isConnected}
                         />
                         <button 
-                            className={`p-3.5 rounded-xl transition-all flex items-center justify-center shadow-lg ${
-                                messageInput.trim() && isConnected
-                                    ? 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white hover:scale-110'
-                                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                            className={`sus-button px-5 py-3 rounded-2xl flex items-center gap-3 ${
+                                messageInput.trim() && isConnected ? '' : 'opacity-60 cursor-not-allowed'
                             }`}
                             onClick={send}
                             disabled={!messageInput.trim() || !isConnected}
                             title="Send Message"
                         >
                             <Send className="w-5 h-5" />
+                            Send
                         </button>
                     </div>
                 </div>
             </div>
 
-            {/* Made by Credit - Bottom Right */}
-            <div className="absolute bottom-4 right-4 z-20">
-                <p className="text-gray-500 text-xs bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-lg shadow-md border border-gray-200">
-                    Made by <span className="text-blue-600 font-semibold">Kartik Naphade</span>
-                </p>
+            {/* Credit */}
+            <div className="absolute bottom-6 right-6 z-20 text-xs text-[var(--sus-text-secondary)] uppercase tracking-[0.25em]">
+                Crafted by <span className="text-white font-semibold tracking-[0.3em]">Kartik Naphade</span>
             </div>
         </div>
     );

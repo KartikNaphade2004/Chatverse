@@ -93,94 +93,103 @@ const Requests = () => {
 
     if (isRoomOwner) {
         return (
-            <div className="requestsPage relative bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 min-h-screen w-screen flex flex-col items-center p-4 md:p-8">
-                {/* Background Pattern */}
-                <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiM2MzY2RjEiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-30"></div>
+            <div className="requestsPage space-scene relative min-h-screen w-screen flex flex-col items-center p-6 md:p-12 text-white overflow-hidden">
+                <div className="among-overlay"></div>
 
-                <div className="relative z-10 w-full max-w-4xl mx-auto space-y-6 animate-fade-in">
-                    <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-white/50">
+                <div className="relative z-10 w-full max-w-5xl mx-auto space-y-8 animate-fade-in">
+                    <div className="crew-card p-6 md:p-8 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                        <div>
+                            <span className="crew-tag">Docking Bay</span>
+                            <h1 className="text-3xl md:text-4xl font-black tracking-tight mt-3">
+                                Manage Boarding Requests — {currentRoom}
+                            </h1>
+                            <p className="text-[var(--sus-text-secondary)] max-w-lg mt-2">
+                                You’re in charge of this starship. Review incoming transmissions and decide who gets to step through the airlock.
+                            </p>
+                        </div>
                         <button
                             onClick={handleBackToRooms}
-                            className="mb-4 p-2 hover:bg-gray-100 rounded-xl text-gray-600 transition-all"
+                            className="crew-visor justify-center gap-2"
                         >
-                            <ArrowLeft className="w-5 h-5" />
+                            <ArrowLeft className="w-4 h-4" />
+                            Back to Galaxy
                         </button>
-                        <h1 className="text-gray-800 text-3xl md:text-4xl font-extrabold mb-2 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                            Room: {currentRoom}
-                        </h1>
-                        <p className="text-gray-600 font-medium">Manage join requests for your room</p>
                     </div>
 
                     {joinRequests.length > 0 ? (
-                        <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-white/50">
-                            <h2 className="text-gray-800 text-xl font-bold mb-4 flex items-center gap-2">
-                                <UserPlus className="w-5 h-5 text-blue-500" />
-                                Join Requests ({joinRequests.length})
-                            </h2>
-                            <div className="space-y-3">
-                                {joinRequests.map((request, index) => (
-                                    <div key={index} className="bg-gradient-to-r from-gray-50 to-white rounded-xl p-5 flex items-center justify-between border-2 border-gray-200 hover:border-blue-300 transition-all shadow-md hover:shadow-lg animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                                                {request.user.charAt(0).toUpperCase()}
-                                            </div>
-                                            <div>
-                                                <h3 className="text-gray-800 font-bold text-lg">{request.user}</h3>
-                                                <p className="text-gray-500 text-sm">Wants to join your room</p>
-                                            </div>
+                        <div className="space-y-4">
+                            {joinRequests.map((request, index) => (
+                                <div
+                                    key={index}
+                                    className="among-card p-6 rounded-3xl flex flex-col md:flex-row md:items-center md:justify-between gap-5 border border-[rgba(123,92,255,0.35)] animate-fade-in"
+                                    style={{ animationDelay: `${index * 0.08}s` }}
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-16 h-16 rounded-2xl bg-[linear-gradient(135deg,rgba(0,194,255,0.35),rgba(123,92,255,0.45))] flex items-center justify-center text-white text-2xl font-bold shadow-[0_18px_45px_rgba(12,25,68,0.65)]">
+                                            {request.user.charAt(0).toUpperCase()}
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <button
-                                                onClick={() => acceptRequest(request.user, request.socketId)}
-                                                className="p-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 rounded-xl text-white transition-all hover:scale-110 shadow-lg"
-                                                title="Accept"
-                                            >
-                                                <Check className="w-5 h-5" />
-                                            </button>
-                                            <button
-                                                onClick={() => rejectRequest(request.user)}
-                                                className="p-3 bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 rounded-xl text-white transition-all hover:scale-110 shadow-lg"
-                                                title="Reject"
-                                            >
-                                                <X className="w-5 h-5" />
-                                            </button>
+                                        <div>
+                                            <h3 className="text-xl font-semibold">{request.user}</h3>
+                                            <p className="text-[var(--sus-text-secondary)] text-sm mt-1">
+                                                Requesting to join your crew channel
+                                            </p>
                                         </div>
                                     </div>
-                                ))}
-                            </div>
+                                    <div className="flex items-center gap-3">
+                                        <button
+                                            onClick={() => acceptRequest(request.user, request.socketId)}
+                                            className="sus-button px-5 py-2 text-sm flex items-center gap-2"
+                                            title="Accept request"
+                                        >
+                                            <Check className="w-4 h-4" />
+                                            Approve
+                                        </button>
+                                        <button
+                                            onClick={() => rejectRequest(request.user)}
+                                            className="crew-visor px-5 py-2 text-sm flex items-center gap-2 bg-[rgba(255,77,109,0.18)] border border-[rgba(255,118,107,0.45)] text-[#ffc6d9]"
+                                            title="Reject request"
+                                        >
+                                            <X className="w-4 h-4" />
+                                            Reject
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     ) : (
-                        <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-12 border border-white/50 shadow-xl text-center">
-                            <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center">
-                                <MessageCircle className="w-10 h-10 text-blue-500" />
+                        <div className="crew-card p-12 text-center">
+                            <div className="w-24 h-24 mx-auto mb-6 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.4),rgba(0,194,255,0.2))] rounded-3xl flex items-center justify-center shadow-[0_20px_55px_rgba(10,16,40,0.65)]">
+                                <MessageCircle className="w-12 h-12 text-white" />
                             </div>
-                            <p className="text-gray-800 text-xl font-semibold mb-2">No join requests</p>
-                            <p className="text-gray-600">Waiting for users to request to join your room...</p>
+                            <h2 className="text-2xl font-semibold mb-2">No boarding requests yet</h2>
+                            <p className="text-[var(--sus-text-secondary)] max-w-md mx-auto leading-relaxed">
+                                Keep the console open. We’ll ping you the moment a new crewmate pings the hatch.
+                            </p>
                         </div>
                     )}
 
-                    <div className="text-center pb-4">
-                        <p className="text-gray-500 text-sm">
-                            Made with <span className="text-red-500">❤️</span> by <span className="text-blue-600 font-semibold">Kartik Naphade</span>
-                        </p>
+                    <div className="text-center pb-6 text-xs text-[var(--sus-text-secondary)] uppercase tracking-[0.2em]">
+                        Captain: <span className="text-white font-semibold tracking-[0.25em]">{currentUser}</span>
                     </div>
                 </div>
             </div>
         );
     } else {
         return (
-            <div className="requestsPage relative bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 min-h-screen w-screen flex flex-col items-center p-4 md:p-8">
-                {/* Background Pattern */}
-                <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiM2MzY2RjEiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-30"></div>
-
-                <div className="relative z-10 w-full max-w-4xl mx-auto flex items-center justify-center min-h-screen">
-                    <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-12 border border-white/50 shadow-xl text-center animate-fade-in">
-                        <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center animate-pulse">
-                            <MessageCircle className="w-10 h-10 text-blue-500" />
+            <div className="requestsPage space-scene relative min-h-screen w-screen flex flex-col items-center justify-center p-6 text-white overflow-hidden">
+                <div className="among-overlay"></div>
+                <div className="relative z-10 w-full max-w-lg mx-auto animate-fade-in">
+                    <div className="crew-card p-12 text-center">
+                        <div className="w-24 h-24 mx-auto mb-6 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.4),rgba(123,92,255,0.3))] rounded-3xl flex items-center justify-center animate-pulse shadow-[0_20px_55px_rgba(7,14,38,0.65)]">
+                            <MessageCircle className="w-12 h-12 text-white" />
                         </div>
-                        <p className="text-gray-800 text-xl font-semibold mb-2">Waiting for approval</p>
-                        <p className="text-gray-600">Your request to join <span className="font-bold text-gray-800">{currentRoom}</span> has been sent</p>
-                        <p className="text-gray-500 text-sm mt-2">Waiting for room owner to accept...</p>
+                        <h2 className="text-2xl font-semibold mb-3">Awaiting Airlock Clearance</h2>
+                        <p className="text-[var(--sus-text-secondary)] leading-relaxed mb-4">
+                            Your boarding request for <span className="text-white font-semibold">{currentRoom}</span> is in the captain’s queue.
+                        </p>
+                        <p className="text-xs uppercase tracking-[0.25em] text-[var(--sus-text-secondary)]">
+                            Stay sharp — we’ll warp you in once they approve.
+                        </p>
                     </div>
                 </div>
             </div>

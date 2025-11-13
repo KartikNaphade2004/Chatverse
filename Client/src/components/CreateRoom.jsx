@@ -200,88 +200,78 @@ const CreateRoom = () => {
     };
 
     return (
-        <div className="createRoomPage relative bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 min-h-screen w-screen flex items-center justify-center p-4 overflow-hidden">
-            {/* Animated Background */}
-            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiM2MzY2RjEiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-30"></div>
-            
-            {/* Floating Orbs */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-20 left-10 w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
-                <div className="absolute top-40 right-10 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
-                <div className="absolute -bottom-8 left-1/2 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
-            </div>
+        <div className="createRoomPage space-scene relative min-h-screen w-screen flex items-center justify-center p-6 md:p-12 text-white overflow-hidden">
+            <div className="among-overlay"></div>
 
-            <div className="relative z-10 w-full max-w-md mx-auto animate-fade-in">
-                <div className="bg-white/90 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/50">
-                    {/* Back Button */}
-                    <button
-                        onClick={() => navigate('/rooms')}
-                        className="mb-6 p-2 hover:bg-gray-100 rounded-xl text-gray-600 transition-all hover:scale-110"
-                        disabled={isCreating}
-                        title="Back to Rooms (Esc)"
-                    >
-                        <ArrowLeft className="w-6 h-6" />
-                    </button>
-
-                    {/* Connection Status */}
-                    <div className="mb-4 flex items-center justify-end gap-2">
-                        {isConnected ? (
-                            <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-lg">
-                                <Wifi className="w-4 h-4 text-green-500" />
-                                <span className="text-green-700 text-xs font-medium">Connected</span>
-                            </div>
-                        ) : (
-                            <div className="flex items-center gap-2 px-3 py-1.5 bg-red-50 border border-red-200 rounded-lg">
-                                <WifiOff className="w-4 h-4 text-red-500" />
-                                <span className="text-red-700 text-xs font-medium">Connecting...</span>
-                            </div>
-                        )}
+            <div className="relative z-10 w-full max-w-2xl mx-auto animate-fade-in">
+                <div className="crew-card px-10 py-12 md:px-12 md:py-14">
+                    {/* Navigation */}
+                    <div className="flex items-center justify-between mb-8">
+                        <button
+                            onClick={() => navigate('/rooms')}
+                            className="crew-visor text-xs md:text-sm gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                            disabled={isCreating}
+                            title="Back to rooms"
+                        >
+                            <ArrowLeft className="w-4 h-4" />
+                            Hangar Bay
+                        </button>
+                        <div className="flex items-center gap-3">
+                            <span className="crew-tag">Dock Status</span>
+                            {isConnected ? (
+                                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[rgba(0,194,255,0.15)] border border-[rgba(0,194,255,0.45)] text-[rgba(166,225,255,0.95)] text-xs font-semibold">
+                                    <Wifi className="w-4 h-4 text-[#5eead4]" />
+                                    Linked
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[rgba(255,77,109,0.12)] border border-[rgba(255,77,109,0.45)] text-[rgba(255,196,209,0.95)] text-xs font-semibold">
+                                    <WifiOff className="w-4 h-4 text-[#f87171]" />
+                                    Syncing...
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {/* Header */}
-                    <div className="text-center mb-8">
-                        <div className="flex items-center justify-center mb-4">
-                            <div className="relative">
-                                <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-500 rounded-xl blur-2xl opacity-50 animate-pulse"></div>
-                                <div className="w-24 h-24 rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center text-white text-4xl font-bold shadow-xl relative z-10 transform hover:scale-110 transition-transform">
-                                    <Plus className="w-12 h-12" />
-                                </div>
+                    <div className="text-center mb-10 space-y-4">
+                        <div className="relative inline-flex items-center justify-center">
+                            <div className="absolute inset-0 blur-3xl bg-[radial-gradient(circle_at_50%_50%,rgba(0,194,255,0.3),transparent_70%)]"></div>
+                            <div className="relative w-24 h-24 md:w-28 md:h-28 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.4),rgba(0,194,255,0.15))] border border-[rgba(123,92,255,0.45)] rounded-[32%] flex items-center justify-center shadow-[0_25px_70px_rgba(15,23,66,0.65)]">
+                                <Plus className="w-12 h-12 md:w-14 md:h-14 text-white" />
                             </div>
                         </div>
-                        <h1 className="text-gray-800 text-4xl md:text-5xl font-extrabold mb-2 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                            Create Room
-                        </h1>
-                        <p className="text-gray-600 font-medium">Create your own chat room instantly</p>
+                        <span className="crew-tag inline-block">Mission Control</span>
+                        <h1 className="text-4xl md:text-5xl font-black tracking-tight">Spin Up A New Space</h1>
+                        <p className="text-[var(--sus-text-secondary)] max-w-md mx-auto leading-relaxed">
+                            Designate a codename for your crew’s private channel. You’ll captain the room—approve who beams aboard and keep impostors outside the airlock.
+                        </p>
                     </div>
 
                     {/* Form */}
                     <div className="space-y-6">
                         {error && (
-                            <div className="bg-red-50 border-2 border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm font-medium animate-fade-in flex items-center gap-2 shadow-md">
-                                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                            <div className="among-card border border-[rgba(255,77,109,0.4)] bg-[rgba(45,12,30,0.85)] text-[#ffd6de] px-4 py-3 rounded-2xl text-sm font-medium animate-fade-in flex items-center gap-3">
+                                <AlertCircle className="w-5 h-5 text-[#ff99ac]" />
                                 <span>{error}</span>
                             </div>
                         )}
                         {status && !error && (
-                            <div className="bg-blue-50 border-2 border-blue-200 text-blue-700 px-4 py-3 rounded-xl text-sm font-medium animate-fade-in flex items-center gap-2 shadow-md">
-                                <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin flex-shrink-0"></div>
+                            <div className="among-card border border-[rgba(0,194,255,0.45)] bg-[rgba(7,20,45,0.85)] text-[#c7ecff] px-4 py-3 rounded-2xl text-sm font-medium animate-fade-in flex items-center gap-3">
+                                <div className="w-4 h-4 border-2 border-[#7dd3fc] border-t-transparent rounded-full animate-spin flex-shrink-0"></div>
                                 <span>{status}</span>
                             </div>
                         )}
-                        <div className="relative">
-                            <label className="block text-gray-700 text-sm font-semibold mb-2 ml-1">
-                                Room Name
+
+                        <div className="relative space-y-3">
+                            <label className="block text-xs uppercase tracking-[0.24em] text-[var(--sus-text-secondary)] font-semibold">
+                                Room Codename
                             </label>
                             <div className="relative">
                                 <input
                                     type="text"
                                     autoFocus
-                                    className={`w-full p-4 pl-5 text-lg bg-gradient-to-r from-gray-50 to-white text-gray-800 placeholder-gray-400 rounded-xl outline-none border-2 transition-all duration-300 shadow-sm ${
-                                        focused
-                                            ? 'border-blue-500 shadow-lg shadow-blue-500/30 scale-[1.01]' 
-                                            : 'border-gray-200 hover:border-blue-300'
-                                    }`}
-                                    placeholder="Enter room name (e.g., MyRoom)"
+                                    className={`sus-input w-full p-4 pl-5 text-lg rounded-2xl ${focused ? 'shadow-[0_0_0_3px_rgba(0,194,255,0.25)] scale-[1.01]' : ''}`}
+                                    placeholder="e.g. ReactorBay, PolarisCrew, AstroOps"
                                     value={roomName}
                                     onChange={(e) => {
                                         setRoomName(e.target.value);
@@ -298,55 +288,55 @@ const CreateRoom = () => {
                                     }}
                                     disabled={isCreating}
                                 />
-                                {focused && (
-                                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-xl -z-10 blur-xl"></div>
-                                )}
+                                <div className="absolute -top-3 right-4">
+                                    <span className="crew-visor text-xs">
+                                        {focused ? 'Press Enter to confirm' : 'Case-sensitive'}
+                                    </span>
+                                </div>
                             </div>
-                            <p className="text-xs text-gray-500 mt-1 ml-1">Press Enter to create • Esc to go back</p>
+                            <p className="text-xs text-[var(--sus-text-secondary)] ml-1">Esc to abort • Naming is case-sensitive • Unique IDs unlock faster</p>
                         </div>
 
                         <button
                             onClick={handleCreateRoom}
                             disabled={!roomName.trim() || isCreating || !isConnected}
-                            className="w-full p-4 text-lg bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 text-white rounded-xl font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg hover:shadow-xl hover:scale-[1.02] relative overflow-hidden group"
+                            className="sus-button w-full py-4 text-sm md:text-base rounded-2xl flex items-center justify-center gap-3 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                             {isCreating ? (
                                 <>
-                                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                    {status || "Creating..."}
+                                    <div className="w-5 h-5 border-2 border-[#1b0b27] border-t-transparent rounded-full animate-spin"></div>
+                                    {status || "Initiating Launch..."}
                                 </>
                             ) : !isConnected ? (
                                 <>
                                     <WifiOff className="w-5 h-5" />
-                                    Waiting for connection...
+                                    Awaiting Link...
                                 </>
                             ) : (
                                 <>
-                                    <Zap className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                                    Create Room Instantly
+                                    <Zap className="w-5 h-5" />
+                                    Deploy Room Capsule
                                 </>
                             )}
                         </button>
 
                         {/* Quick Tips */}
-                        <div className="bg-gradient-to-br from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-4 space-y-2 shadow-sm">
-                            <div className="flex items-center gap-2 text-blue-700 text-sm font-semibold">
-                                <Zap className="w-4 h-4" />
-                                Quick Tips
+                        <div className="among-card px-5 py-5 text-sm text-[var(--sus-text-secondary)] space-y-3 border border-[rgba(123,92,255,0.35)]">
+                            <div className="flex items-center gap-2 uppercase tracking-[0.18em] text-xs text-[#a5b4ff] font-semibold">
+                                <Zap className="w-4 h-4 text-[#ffd166]" />
+                                Crew Manual
                             </div>
-                            <ul className="text-xs text-blue-600 space-y-1 ml-6 list-disc">
-                                <li>Room names are case-sensitive</li>
-                                <li>Use unique names to avoid conflicts</li>
-                                <li>You'll be the room owner automatically</li>
+                            <ul className="space-y-2 text-sm leading-relaxed">
+                                <li>• You become the captain—approve every boarding pass.</li>
+                                <li>• Use unique codenames to keep impostors guessing.</li>
+                                <li>• Keep the console open for live join requests.</li>
                             </ul>
                         </div>
                     </div>
 
                     {/* Made by Credit */}
-                    <div className="mt-8 text-center">
-                        <p className="text-gray-400 text-xs">
-                            Made with <span className="text-red-500">❤️</span> by <span className="text-blue-600 font-semibold">Kartik Naphade</span>
-                        </p>
+                    <div className="mt-10 text-center text-xs text-[var(--sus-text-secondary)] tracking-[0.2em] uppercase">
+                        Crafted for the Crew by <span className="text-white font-semibold tracking-[0.25em]">Kartik Naphade</span>
                     </div>
                 </div>
             </div>
