@@ -48,6 +48,7 @@ const SimpleRequest = () => {
 
         newSocket.on('hasAccess', () => {
             setIsAccepted(true);
+            setIsInRoom(true);
             setTimeout(() => navigate('/chat'), 1000);
         });
 

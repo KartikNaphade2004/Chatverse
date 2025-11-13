@@ -57,11 +57,13 @@ const Chat = () => {
         });
 
         socket.on('roomUsers', (users) => {
-            setOnlineUsers(users);
+            // Users list already excludes current user from backend
+            setOnlineUsers(users || []);
         });
 
         socket.on('roomUsersUpdate', (users) => {
-            setOnlineUsers(users.filter(u => u !== user));
+            // Users list already excludes current user from backend
+            setOnlineUsers(users || []);
         });
 
         socket.on('userJoinedRoom', (data) => {

@@ -201,9 +201,9 @@ io.on("connection",(socket)=>{
             // Notify user they're accepted
             socket.emit('joinRequestAccepted', { room });
             
-            // Send updated room users list
-            const roomUsers = Object.values(rooms[room].users);
-            io.to(room).emit('roomUsersUpdate', roomUsers);
+            // Send empty user list (they're the first one)
+            socket.emit('roomUsers', []);
+            socket.emit('roomUsersUpdate', []);
             
             return;
         }
@@ -254,23 +254,32 @@ io.on("connection",(socket)=>{
         const requestingSocket = io.sockets.sockets.get(requestingSocketId);
         if (requestingSocket) {
             requestingSocket.join(room);
+            
+            // Notify requesting user they're accepted
+            requestingSocket.emit('joinRequestAccepted', { room });
+            
+            // Send room users to the newly accepted user (excluding themselves)
+            const roomUsers = Object.values(rooms[room].users);
+            requestingSocket.emit('roomUsers', roomUsers.filter(u => u !== requestingUser));
         }
         
-        // Notify requesting user they're accepted
-        io.to(requestingSocketId).emit('joinRequestAccepted', { room });
-        
-        // Notify all users in room
-        io.to(room).emit('userJoinedRoom', {
+        // Notify all other users in room about the new user
+        socket.to(room).emit('userJoinedRoom', {
             user: requestingUser,
             room: room,
             timestamp: new Date().toISOString()
         });
 
-        // Send updated room users list
+        // Send updated room users list to all users in room (excluding the new user)
         const roomUsers = Object.values(rooms[room].users);
-        io.to(room).emit('roomUsersUpdate', roomUsers);
+        socket.to(room).emit('roomUsersUpdate', roomUsers);
+        
+        // Also send to the new user (excluding themselves)
+        if (requestingSocket) {
+            requestingSocket.emit('roomUsersUpdate', roomUsers.filter(u => u !== requestingUser));
+        }
 
-        console.log(`${requestingUser} joined ${room}`);
+        console.log(`${requestingUser} joined ${room} via acceptance`);
     });
 
     // Reject join request
