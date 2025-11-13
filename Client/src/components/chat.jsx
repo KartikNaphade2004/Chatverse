@@ -33,10 +33,14 @@ const Chat = () => {
         });
 
         socket.on('connect', () => {
-            console.log(`Client connected!`);
+            console.log(`Client connected! Socket ID: ${socket.id}`);
             setid(socket.id);
             setIsConnected(true);
-            socket.emit('joinRoom', { user, room });
+            
+            // Small delay to ensure socket is fully connected
+            setTimeout(() => {
+                socket.emit('joinRoom', { user, room });
+            }, 100);
         });
 
         socket.on('disconnect', () => {
@@ -101,7 +105,13 @@ const Chat = () => {
         if (!socket) return;
 
         socket.on('sendMessage', (data) => {
-            setMessages((prevMessages) => [...prevMessages, { ...data, timestamp: new Date().toISOString() }]);
+            console.log('Received message:', data);
+            setMessages((prevMessages) => [...prevMessages, { 
+                user: data.user, 
+                message: data.message, 
+                id: data.id,
+                timestamp: data.timestamp || new Date().toISOString() 
+            }]);
         });
 
         return () => {
@@ -111,9 +121,12 @@ const Chat = () => {
 
     const send = () => {
         const message = messageInput.trim();
-        if (message && socket) {
-            socket.emit('message', { user, message, id });
+        if (message && socket && socket.connected) {
+            console.log('Sending message:', message, 'socket.id:', socket.id);
+            socket.emit('message', { user, message, id: socket.id });
             setMessageInput("");
+        } else {
+            console.error('Cannot send message - socket not connected or message empty');
         }
     }
 

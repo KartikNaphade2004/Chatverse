@@ -270,13 +270,16 @@ io.on("connection",(socket)=>{
         const requestingSocket = io.sockets.sockets.get(requestingSocketId);
         if (requestingSocket) {
             requestingSocket.join(room);
+            console.log(`${requestingUser} (socket: ${requestingSocketId}) joined room ${room}`);
             
             // Notify requesting user they're accepted
             requestingSocket.emit('joinRequestAccepted', { room });
             
             // Send room users to the newly accepted user (excluding themselves)
             const roomUsers = Object.values(rooms[room].users);
-            requestingSocket.emit('roomUsers', roomUsers.filter(u => u !== requestingUser));
+            const otherUsers = roomUsers.filter(u => u !== requestingUser);
+            requestingSocket.emit('roomUsers', otherUsers);
+            console.log(`Sent ${otherUsers.length} users to ${requestingUser}`);
         }
         
         // Notify all other users in room about the new user
@@ -288,11 +291,12 @@ io.on("connection",(socket)=>{
 
         // Send updated room users list to all users in room (excluding the new user)
         const roomUsers = Object.values(rooms[room].users);
-        socket.to(room).emit('roomUsersUpdate', roomUsers);
+        const otherUsers = roomUsers.filter(u => u !== requestingUser);
+        socket.to(room).emit('roomUsersUpdate', otherUsers);
         
         // Also send to the new user (excluding themselves)
         if (requestingSocket) {
-            requestingSocket.emit('roomUsersUpdate', roomUsers.filter(u => u !== requestingUser));
+            requestingSocket.emit('roomUsersUpdate', otherUsers);
         }
 
         console.log(`${requestingUser} joined ${room} via acceptance`);
@@ -383,12 +387,15 @@ io.on("connection",(socket)=>{
 
         socket.join(room);
         console.log(`${user} joined room: ${room} (socket: ${socket.id})`);
+        console.log(`Room users:`, rooms[room].users);
+        console.log(`Socket rooms:`, Array.from(io.sockets.adapter.rooms.get(room) || []));
 
         // Send room users list (excluding current user)
         const roomUsers = Object.values(rooms[room].users).filter(u => u !== user);
         socket.emit('roomUsers', roomUsers);
+        console.log(`Sent ${roomUsers.length} users to ${user}`);
 
-        // Notify others in the room
+        // Notify others in the room about new user
         socket.to(room).emit('userJoinedRoom', {
             user: user,
             room: room,
@@ -397,7 +404,7 @@ io.on("connection",(socket)=>{
 
         // Send updated room users list to all (excluding the joining user)
         const updatedRoomUsers = Object.values(rooms[room].users);
-        socket.to(room).emit('roomUsersUpdate', updatedRoomUsers);
+        socket.to(room).emit('roomUsersUpdate', updatedRoomUsers.filter(u => u !== user));
         socket.emit('roomUsersUpdate', updatedRoomUsers.filter(u => u !== user));
     });
 
@@ -417,15 +424,23 @@ io.on("connection",(socket)=>{
 
     // Send message in room
     socket.on('message', ({message, id})=>{
-        const room = socketToRoom[id];
-        if (room && rooms[room] && rooms[room].users[id] && message){
-            const user = rooms[room].users[id];
+        // Use the socket.id from the current socket, not the passed id
+        const room = socketToRoom[socket.id];
+        console.log(`Message from ${socket.id}, room: ${room}, message: ${message}`);
+        
+        if (room && rooms[room] && rooms[room].users[socket.id] && message){
+            const user = rooms[room].users[socket.id];
+            console.log(`Broadcasting message from ${user} to room ${room}`);
+            
+            // Broadcast to all users in the room (including sender)
             io.to(room).emit('sendMessage', {
                 user: user,
                 message: message,
-                id: id,
+                id: socket.id,
                 timestamp: new Date().toISOString()
             });
+        } else {
+            console.log(`Message failed - room: ${room}, user in room: ${room ? rooms[room]?.users[socket.id] : 'N/A'}`);
         }
     });
 
