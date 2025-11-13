@@ -57,7 +57,11 @@ const Chat = () => {
         socket.on('error', (error) => {
             console.error('Socket error:', error);
             if (error.message && error.message.includes('authorized')) {
-                navigate('/requests');
+                navigate('/request');
+            } else if (error.message && error.message.includes('Room does not exist')) {
+                // Room doesn't exist - go back to request page
+                console.error('Room does not exist, redirecting to request page');
+                navigate('/request');
             }
         });
 

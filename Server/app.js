@@ -266,11 +266,18 @@ io.on("connection",(socket)=>{
         rooms[room].users[requestingSocketId] = requestingUser;
         socketToRoom[requestingSocketId] = room;
         
+        console.log(`Added ${requestingUser} to room ${room} with socket ${requestingSocketId}`);
+        console.log(`Room users now:`, rooms[room].users);
+        
         // Make requesting user join the room socket room
         const requestingSocket = io.sockets.sockets.get(requestingSocketId);
         if (requestingSocket) {
             requestingSocket.join(room);
-            console.log(`${requestingUser} (socket: ${requestingSocketId}) joined room ${room}`);
+            console.log(`${requestingUser} (socket: ${requestingSocketId}) joined socket room ${room}`);
+            
+            // Verify socket is in room
+            const roomSockets = Array.from(io.sockets.adapter.rooms.get(room) || []);
+            console.log(`Room ${room} now has ${roomSockets.length} sockets:`, roomSockets);
             
             // Notify requesting user they're accepted
             requestingSocket.emit('joinRequestAccepted', { room });
@@ -279,7 +286,9 @@ io.on("connection",(socket)=>{
             const roomUsers = Object.values(rooms[room].users);
             const otherUsers = roomUsers.filter(u => u !== requestingUser);
             requestingSocket.emit('roomUsers', otherUsers);
-            console.log(`Sent ${otherUsers.length} users to ${requestingUser}`);
+            console.log(`Sent ${otherUsers.length} users to ${requestingUser}:`, otherUsers);
+        } else {
+            console.error(`ERROR: Socket ${requestingSocketId} not found for user ${requestingUser}`);
         }
         
         // Notify all other users in room about the new user
@@ -384,16 +393,21 @@ io.on("connection",(socket)=>{
         );
 
         if (!userSocketId) {
-            socket.emit('error', { message: 'You are not authorized to join this room' });
+            console.error(`User ${user} not found in room ${room}. Room users:`, rooms[room].users);
+            socket.emit('error', { message: 'You are not authorized to join this room. Please request access first.' });
             return;
         }
+        
+        console.log(`User ${user} found in room with socket ${userSocketId}, current socket: ${socket.id}`);
 
         // CRITICAL: Update socket ID if different (user reconnected or new connection)
         if (userSocketId !== socket.id) {
+            console.log(`Socket ID changed for ${user}: ${userSocketId} -> ${socket.id}`);
             // Remove old socket from room
             const oldSocket = io.sockets.sockets.get(userSocketId);
             if (oldSocket) {
                 oldSocket.leave(room);
+                console.log(`Removed old socket ${userSocketId} from room`);
             }
             delete rooms[room].users[userSocketId];
             delete socketToRoom[userSocketId];
@@ -401,6 +415,9 @@ io.on("connection",(socket)=>{
             // Add new socket to room
             rooms[room].users[socket.id] = user;
             socketToRoom[socket.id] = room;
+            console.log(`Added new socket ${socket.id} for ${user}`);
+        } else {
+            console.log(`Socket ID unchanged for ${user}: ${socket.id}`);
         }
 
         // CRITICAL: Join the socket room
