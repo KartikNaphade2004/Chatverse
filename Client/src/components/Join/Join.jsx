@@ -41,7 +41,7 @@ const Join = () => {
 
       {/* Main Content */}
       <div className="relative z-10 w-full max-w-md mx-auto px-6 animate-fade-in">
-        <div className="JoinContainer bg-white/80 backdrop-blur-xl rounded-3xl p-10 shadow-2xl border border-white/50">
+        <div className="JoinContainer glass rounded-3xl p-10 shadow-2xl border border-white/30 animate-glow">
           {/* Logo and Title */}
           <div className='text-center mb-10 space-y-4'>
             <div className='flex items-center justify-center mb-6'>
@@ -54,7 +54,7 @@ const Join = () => {
                 />
               </div>
             </div>
-            <h1 className='text-6xl md:text-7xl font-extrabold mb-2 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent animate-fade-in'>
+            <h1 className='text-6xl md:text-7xl font-extrabold mb-2 gradient-text-vibrant animate-fade-in'>
               Chat Verse
             </h1>
             <div className="flex items-center justify-center gap-2 text-gray-600 text-sm font-medium">
@@ -89,11 +89,11 @@ const Join = () => {
               <div className="relative">
                 <input
                   type="text"
-                  className={`w-full p-4 pl-5 text-lg bg-gradient-to-r from-gray-50 to-white text-gray-800 placeholder-gray-400 rounded-xl outline-none border-2 transition-all duration-300 shadow-sm ${
+                  className={`w-full p-4 pl-5 text-lg bg-white/90 backdrop-blur-sm text-gray-800 placeholder-gray-400 rounded-xl outline-none border-2 transition-all duration-300 shadow-md ${
                     focused
-                      ? 'border-blue-500 shadow-lg shadow-blue-500/30 scale-[1.01]' 
-                      : 'border-gray-200 hover:border-blue-300'
-                  } ${!isValidUsername && username.length > 0 ? 'border-red-300' : ''}`}
+                      ? 'border-blue-500 shadow-xl shadow-blue-500/40 scale-[1.02] ring-2 ring-blue-200' 
+                      : 'border-gray-200 hover:border-blue-300 hover:shadow-lg'
+                  } ${!isValidUsername && username.length > 0 ? 'border-red-400 shadow-red-200/50' : ''}`}
                   placeholder="Enter your name (2-20 characters)"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
@@ -119,7 +119,7 @@ const Join = () => {
             </div>
 
             <button 
-              className="group relative w-full p-4 text-lg bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white rounded-xl font-semibold transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none overflow-hidden"
+              className="group relative w-full p-4 text-lg bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white rounded-xl font-semibold transition-all duration-300 transform hover:scale-[1.05] hover:shadow-2xl hover:shadow-purple-500/60 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none overflow-hidden animate-bounce-in"
               onClick={handleContinue}
               disabled={!isValidUsername || isSubmitting}
             >
@@ -132,11 +132,12 @@ const Join = () => {
                 ) : (
                   <>
                     Continue
-                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform duration-300" />
                   </>
                 )}
               </span>
               <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
             </button>
           </div>
 
